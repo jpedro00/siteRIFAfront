@@ -1,0 +1,38 @@
+{
+  "name": "tironirifa-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "description": "TironiRifa - frontend: vitrine, painel do organizador e console da plataforma.",
+  "type": "module",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "workspaces": [
+    "packages/shared",
+    "apps/storefront",
+    "apps/organizer",
+    "apps/admin"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "prepare:internal": "npm run build -w @campaigns/shared",
+    "typecheck": "npm run prepare:internal && npm run typecheck --workspaces --if-present && npm run typecheck:tests",
+    "typecheck:tests": "tsc -p tsconfig.tests.json",
+    "lint": "eslint .",
+    "test": "npm run prepare:internal && vitest run",
+    "test:watch": "npm run prepare:internal && vitest",
+    "contracts:verify": "node scripts/contracts-snapshot.mjs",
+    "dev:storefront": "npm run prepare:internal && npm run dev -w @campaigns/storefront",
+    "dev:organizer": "npm run prepare:internal && npm run dev -w @campaigns/organizer",
+    "dev:admin": "npm run prepare:internal && npm run dev -w @campaigns/admin"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@types/node": "^22.10.2",
+    "eslint": "^9.17.0",
+    "globals": "^15.15.0",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.1",
+    "vitest": "^2.1.8"
+  }
+}

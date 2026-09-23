@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Sem PostgreSQL: os testes que exigem banco real — RLS, isolamento, outbox —
+# ficaram no repositorio do backend, junto do banco que eles precisam. Subir um
+# servico aqui seria custo sem cobertura.
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      # PRIMEIRO passo depois da instalação, e de propósito.
+      #
+      # `packages/shared/src/{contracts,states,permissions,constants}` é uma
+      # cópia da fonte, que vive no backend. Uma edição feita só deste lado não
+      # quebra typecheck nenhum: os dois repositórios continuam compilando, e a
+      # diferença aparece no navegador de quem compra, como um campo que a API
+      # recusa. Aqui ela vira falha de CI, com o arquivo divergente nomeado.
+      - name: Conferir o snapshot dos contratos
+        run: npm run contracts:verify
+
+      - name: Compilar o pacote compartilhado
+        # As três aplicações importam os tipos de @campaigns/shared; sem build,
+        # o typecheck não encontra as declarações.
+        run: npm run build -w @campaigns/shared
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Testes
+        run: npm test
+
+      - name: Build
+        run: npm run build

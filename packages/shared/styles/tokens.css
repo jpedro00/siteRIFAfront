@@ -1,0 +1,531 @@
+/* ==========================================================================
+   RIFAS · tokens de design
+   --------------------------------------------------------------------------
+   Esta e a UNICA folha onde um valor de cor, raio, sombra ou espacamento
+   nasce. Todo o resto do produto le variavel. A regra existe por um motivo
+   pratico: quando uma comunidade puder trocar a identidade (Fase 4), a troca
+   tem de acontecer em um lugar so — nao em cinquenta arquivos com `#7c5cff`
+   escrito na mao.
+
+   ARQUITETURA EM TRES CAMADAS
+   ---------------------------
+   1. PALETA CRUA (--c-*)      valores absolutos. Ninguem usa direto na UI.
+   2. MARCA (--brand-*)        aponta para a paleta. E ESTE o ponto de
+                               sobrescrita: plataforma > comunidade > sorteio.
+   3. SEMANTICA (--bg, --text) o que a interface realmente consome.
+
+   Uma comunidade que queira a propria cor redefine apenas a camada 2:
+
+       [data-tenant-theme] { --brand-500: #0f766e; --brand-600: #0d5f58; }
+
+   e a interface inteira acompanha, inclusive estados de foco e sombras
+   coloridas, porque todos derivam de --brand-*. Nada alem disso precisa mudar.
+   A Fase 4 completa (tema dinamico vindo do banco) NAO esta implementada; o
+   que existe aqui e o ponto de encaixe para ela, documentado e pronto.
+   ========================================================================== */
+
+:root {
+  /* ----------------------------------------------------------------------
+     1. PALETA CRUA
+     ---------------------------------------------------------------------- */
+
+  /* Violeta-indigo: a cor de comando. Escolhida por ler como fintech/SaaS
+     recente, e nao como festa junina. Saturada o bastante para ser premium
+     sem virar neon. */
+  --c-violet-50: #f2f0ff;
+  --c-violet-100: #e6e2ff;
+  --c-violet-200: #cec7ff;
+  --c-violet-300: #ada0ff;
+  --c-violet-400: #8a72ff;
+  --c-violet-500: #6d4aff;
+  --c-violet-600: #5a2ff0;
+  --c-violet-700: #4a21cc;
+  --c-violet-800: #3c1da3;
+  --c-violet-900: #2f1a7a;
+
+  /* Ambar: o premio. Usado com parcimonia — destaque, selo, "ultimas
+     unidades". Ouro e o vocabulario de premio sem cair no carnavalesco. */
+  --c-amber-50: #fff8eb;
+  --c-amber-100: #ffefc7;
+  --c-amber-200: #ffdd8a;
+  --c-amber-300: #ffc84d;
+  --c-amber-400: #ffb01f;
+  --c-amber-500: #f59e0b;
+  --c-amber-600: #d97706;
+  --c-amber-700: #b45309;
+
+  /* Esmeralda: confirmado, pago, sucesso. */
+  --c-emerald-50: #ecfdf5;
+  --c-emerald-100: #d1fae5;
+  --c-emerald-200: #a7f3d0;
+  --c-emerald-400: #34d399;
+  --c-emerald-500: #10b981;
+  --c-emerald-600: #059669;
+  --c-emerald-700: #047857;
+
+  /* Rose: erro e perigo. */
+  --c-rose-50: #fff1f2;
+  --c-rose-100: #ffe4e6;
+  --c-rose-200: #fecdd3;
+  --c-rose-400: #fb7185;
+  --c-rose-500: #f43f5e;
+  --c-rose-600: #e11d48;
+  --c-rose-700: #be123c;
+
+  /* Azul: informacao e "aguardando" — distinto do violeta de comando. */
+  --c-blue-50: #eff6ff;
+  --c-blue-100: #dbeafe;
+  --c-blue-200: #bfdbfe;
+  --c-blue-500: #3b82f6;
+  --c-blue-600: #2563eb;
+  --c-blue-700: #1d4ed8;
+
+  /* Neutros com leve desvio frio, para nao parecerem sujos ao lado do
+     violeta. O 950 e a tinta: quase preto, nunca #000 puro, que vibra. */
+  --c-slate-0: #ffffff;
+  --c-slate-25: #fbfcfe;
+  --c-slate-50: #f6f8fb;
+  --c-slate-100: #eef1f6;
+  --c-slate-200: #e2e6ee;
+  --c-slate-300: #cbd2df;
+  --c-slate-400: #97a1b5;
+  --c-slate-500: #6b7589;
+  --c-slate-600: #515a6e;
+  --c-slate-700: #3b4354;
+  --c-slate-800: #262c3a;
+  --c-slate-900: #171b26;
+  --c-slate-950: #0d1017;
+
+  /* ----------------------------------------------------------------------
+     2. MARCA — camada de sobrescrita
+     ---------------------------------------------------------------------- */
+  --brand-50: var(--c-violet-50);
+  --brand-100: var(--c-violet-100);
+  --brand-200: var(--c-violet-200);
+  --brand-300: var(--c-violet-300);
+  --brand-400: var(--c-violet-400);
+  --brand-500: var(--c-violet-500);
+  --brand-600: var(--c-violet-600);
+  --brand-700: var(--c-violet-700);
+  --brand-800: var(--c-violet-800);
+  --brand-900: var(--c-violet-900);
+
+  /* Componentes RGB da marca, para sombras e vidros com alfa. Precisam ser
+     mantidos junto com --brand-500 quando uma comunidade trocar a cor. */
+  --brand-500-rgb: 109 74 255;
+
+  --accent-400: var(--c-amber-400);
+  --accent-500: var(--c-amber-500);
+  --accent-600: var(--c-amber-600);
+
+  /* ----------------------------------------------------------------------
+     3. SEMANTICA — o que a interface consome
+     ---------------------------------------------------------------------- */
+
+  /* Superficies */
+  --bg: var(--c-slate-50);
+  --bg-subtle: var(--c-slate-100);
+  --surface: var(--c-slate-0);
+  --surface-elevated: var(--c-slate-0);
+  --surface-sunken: var(--c-slate-50);
+  --surface-inverse: var(--c-slate-900);
+  --surface-brand-soft: var(--brand-50);
+
+  /* Bordas */
+  --border: var(--c-slate-200);
+  --border-strong: var(--c-slate-300);
+  --border-subtle: var(--c-slate-100);
+  --border-inverse: rgb(255 255 255 / 0.12);
+
+  /* Texto */
+  --text: var(--c-slate-900);
+  --text-muted: var(--c-slate-500);
+  --text-subtle: var(--c-slate-400);
+  --text-inverse: var(--c-slate-0);
+  --text-on-brand: var(--c-slate-0);
+  --text-on-accent: var(--c-slate-950);
+
+  /* Acao */
+  --primary: var(--brand-500);
+  --primary-hover: var(--brand-600);
+  --primary-active: var(--brand-700);
+  --primary-soft: var(--brand-50);
+  --primary-soft-hover: var(--brand-100);
+  --primary-border: var(--brand-200);
+  --primary-text: var(--brand-700);
+
+  /* Feedback */
+  --success: var(--c-emerald-600);
+  --success-soft: var(--c-emerald-50);
+  --success-border: var(--c-emerald-200);
+  --success-text: var(--c-emerald-700);
+
+  --warning: var(--c-amber-500);
+  --warning-soft: var(--c-amber-50);
+  --warning-border: var(--c-amber-200);
+  --warning-text: var(--c-amber-700);
+
+  --danger: var(--c-rose-600);
+  --danger-hover: var(--c-rose-700);
+  --danger-soft: var(--c-rose-50);
+  --danger-border: var(--c-rose-200);
+  --danger-text: var(--c-rose-700);
+
+  --info: var(--c-blue-600);
+  --info-soft: var(--c-blue-50);
+  --info-border: var(--c-blue-200);
+  --info-text: var(--c-blue-700);
+
+  /* ----------------------------------------------------------------------
+     ESTADOS DE NUMERO — o vocabulario central do produto
+     ------------------------------------------------------------------------
+     Quatro estados que o participante ve na grade. Cada um tem FUNDO, BORDA
+     e TEXTO proprios, porque a distincao nao pode depender so de matiz:
+     quem nao distingue verde de vermelho precisa ler a diferenca pela borda,
+     pelo icone e pelo peso. A cor e o reforco, nao a informacao.
+     ---------------------------------------------------------------------- */
+
+  /* LIVRE — disponivel para escolha. Neutro e convidativo. */
+  --number-free-bg: var(--c-slate-0);
+  --number-free-border: var(--c-slate-300);
+  --number-free-text: var(--c-slate-700);
+  --number-free-hover-bg: var(--brand-50);
+  --number-free-hover-border: var(--brand-400);
+
+  /* SELECIONADO — escolhido por mim, ainda nao enviado. Cheio e inequivoco. */
+  --number-selected-bg: var(--primary);
+  --number-selected-border: var(--brand-700);
+  --number-selected-text: var(--text-on-brand);
+
+  /* RESERVADO — no carrinho de alguem, com prazo correndo. */
+  --number-reserved-bg: var(--c-amber-50);
+  --number-reserved-border: var(--c-amber-400);
+  --number-reserved-text: var(--c-amber-700);
+
+  /* PENDENTE — pedido feito, pagamento em processamento. */
+  --number-pending-bg: var(--c-blue-50);
+  --number-pending-border: var(--c-blue-500);
+  --number-pending-text: var(--c-blue-700);
+
+  /* PAGO — vendido. Definitivo (RN18). */
+  --number-paid-bg: var(--c-emerald-50);
+  --number-paid-border: var(--c-emerald-500);
+  --number-paid-text: var(--c-emerald-700);
+
+  /* CATIVO — retido pela organizacao, fora de venda. */
+  --number-captive-bg: var(--c-slate-100);
+  --number-captive-border: var(--c-slate-400);
+  --number-captive-text: var(--c-slate-600);
+
+  /* ----------------------------------------------------------------------
+     RAIO
+     ---------------------------------------------------------------------- */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-2xl: 28px;
+  --radius-full: 999px;
+
+  /* ----------------------------------------------------------------------
+     SOMBRA
+     ------------------------------------------------------------------------
+     Duas camadas em cada nivel: um halo curto que cola o elemento na
+     superficie e uma difusao longa que o levanta. Uma sombra so, chapada,
+     e o que faz painel administrativo parecer barato.
+     ---------------------------------------------------------------------- */
+  --shadow-xs: 0 1px 2px rgb(13 16 23 / 0.05);
+  --shadow-sm: 0 1px 2px rgb(13 16 23 / 0.06), 0 1px 3px rgb(13 16 23 / 0.04);
+  --shadow-md: 0 2px 4px rgb(13 16 23 / 0.05), 0 6px 16px rgb(13 16 23 / 0.07);
+  --shadow-lg: 0 4px 8px rgb(13 16 23 / 0.05), 0 16px 32px rgb(13 16 23 / 0.10);
+  --shadow-xl: 0 8px 16px rgb(13 16 23 / 0.06), 0 28px 56px rgb(13 16 23 / 0.14);
+  --shadow-brand: 0 4px 14px rgb(var(--brand-500-rgb) / 0.30);
+  --shadow-inset: inset 0 1px 0 rgb(255 255 255 / 0.6);
+
+  /* Anel de foco. Mesma espessura em todo o produto: e uma promessa de
+     acessibilidade, nao um enfeite por componente. */
+  --focus-ring: 0 0 0 3px rgb(var(--brand-500-rgb) / 0.35);
+  --focus-ring-danger: 0 0 0 3px rgb(225 29 72 / 0.30);
+
+  /* ----------------------------------------------------------------------
+     ESPACAMENTO — escala de 4px
+     ---------------------------------------------------------------------- */
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 48px;
+  --space-10: 64px;
+  --space-11: 80px;
+  --space-12: 96px;
+
+  /* ----------------------------------------------------------------------
+     TIPOGRAFIA
+     ------------------------------------------------------------------------
+     Pilha do sistema, sem fonte remota: a vitrine abre em rede movel e uma
+     fonte externa custa um salto de layout logo no primeiro paing — caro
+     justamente na tela que precisa vender.
+
+     `--font-numeric` tem tabular-nums: numeros de largura fixa. Sem isso a
+     grade de 1000 numeros dansa, porque o "1" e mais estreito que o "8".
+     ---------------------------------------------------------------------- */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
+    'Liberation Mono', monospace;
+
+  --text-2xs: 0.6875rem;  /* 11px */
+  --text-xs: 0.75rem;     /* 12px */
+  --text-sm: 0.8125rem;   /* 13px */
+  --text-base: 0.9375rem; /* 15px */
+  --text-md: 1rem;        /* 16px */
+  --text-lg: 1.125rem;    /* 18px */
+  --text-xl: 1.375rem;    /* 22px */
+  --text-2xl: 1.75rem;    /* 28px */
+  --text-3xl: 2.25rem;    /* 36px */
+  --text-4xl: 3rem;       /* 48px */
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-extrabold: 800;
+
+  --leading-tight: 1.15;
+  --leading-snug: 1.3;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.65;
+
+  --tracking-tight: -0.02em;
+  --tracking-snug: -0.01em;
+  --tracking-wide: 0.02em;
+  --tracking-caps: 0.06em;
+
+  /* ----------------------------------------------------------------------
+     MOVIMENTO
+     ------------------------------------------------------------------------
+     Curtas e discretas. Microinteracao aqui serve para confirmar que o toque
+     foi registrado — nao para chamar atencao.
+     ---------------------------------------------------------------------- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --duration-slow: 280ms;
+
+  /* ----------------------------------------------------------------------
+     LAYOUT
+     ---------------------------------------------------------------------- */
+  --container-max: 1200px;
+  --container-wide: 1400px;
+  --gutter: var(--space-4);
+  --header-height: 64px;
+  --header-height-compact: 56px;
+  --sidebar-width: 256px;
+  --sidebar-width-collapsed: 72px;
+
+  /* Alvo minimo de toque. 44px e o piso do que o dedo acerta com confianca;
+     a grade de numeros nao pode descer disso no telefone. */
+  --touch-target: 44px;
+
+  /* Camadas. Numeros esparsos e nomeados para que ninguem precise inventar
+     um `z-index: 9999` no meio de um componente. */
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-header: 100;
+  --z-drawer: 200;
+  --z-overlay: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+}
+
+/* ==========================================================================
+   MODO ESCURO
+   --------------------------------------------------------------------------
+   Redefine apenas a camada 3. A paleta crua e a marca ficam de pe — e por
+   isso que uma comunidade que trocou --brand-500 ganha o modo escuro de
+   graca, sem uma segunda rodada de decisoes de cor.
+
+   O gatilho segue o sistema, mas `[data-theme="light"]` no <html> vence:
+   quem escolheu claro continua no claro mesmo a meia-noite.
+   ========================================================================== */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: var(--c-slate-950);
+    --bg-subtle: var(--c-slate-900);
+    --surface: var(--c-slate-900);
+    --surface-elevated: var(--c-slate-800);
+    --surface-sunken: #090b11;
+    --surface-inverse: var(--c-slate-0);
+    --surface-brand-soft: rgb(var(--brand-500-rgb) / 0.14);
+
+    --border: #2b3242;
+    --border-strong: #3b4354;
+    --border-subtle: #1d2230;
+    --border-inverse: rgb(13 16 23 / 0.12);
+
+    --text: #f2f4f8;
+    --text-muted: #9aa4b8;
+    --text-subtle: #6b7589;
+    --text-inverse: var(--c-slate-950);
+    --text-on-brand: #ffffff;
+
+    /* No escuro a marca precisa clarear: --brand-500 sobre quase preto
+       perde legibilidade em texto pequeno. */
+    --primary: var(--brand-400);
+    --primary-hover: var(--brand-300);
+    --primary-active: var(--brand-200);
+    --primary-soft: rgb(var(--brand-500-rgb) / 0.16);
+    --primary-soft-hover: rgb(var(--brand-500-rgb) / 0.24);
+    --primary-border: rgb(var(--brand-500-rgb) / 0.42);
+    --primary-text: var(--brand-300);
+
+    --success: var(--c-emerald-400);
+    --success-soft: rgb(16 185 129 / 0.14);
+    --success-border: rgb(16 185 129 / 0.40);
+    --success-text: var(--c-emerald-200);
+
+    --warning: var(--c-amber-400);
+    --warning-soft: rgb(245 158 11 / 0.14);
+    --warning-border: rgb(245 158 11 / 0.40);
+    --warning-text: var(--c-amber-200);
+
+    --danger: var(--c-rose-400);
+    --danger-hover: var(--c-rose-300);
+    --danger-soft: rgb(244 63 94 / 0.14);
+    --danger-border: rgb(244 63 94 / 0.40);
+    --danger-text: var(--c-rose-200);
+
+    --info: var(--c-blue-500);
+    --info-soft: rgb(59 130 246 / 0.14);
+    --info-border: rgb(59 130 246 / 0.40);
+    --info-text: var(--c-blue-200);
+
+    --number-free-bg: var(--c-slate-800);
+    --number-free-border: #3f4759;
+    --number-free-text: #d6dbe5;
+    --number-free-hover-bg: rgb(var(--brand-500-rgb) / 0.22);
+    --number-free-hover-border: var(--brand-400);
+
+    --number-selected-bg: var(--brand-500);
+    --number-selected-border: var(--brand-300);
+    --number-selected-text: #ffffff;
+
+    --number-reserved-bg: rgb(245 158 11 / 0.16);
+    --number-reserved-border: var(--c-amber-500);
+    --number-reserved-text: var(--c-amber-200);
+
+    --number-pending-bg: rgb(59 130 246 / 0.16);
+    --number-pending-border: var(--c-blue-500);
+    --number-pending-text: var(--c-blue-200);
+
+    --number-paid-bg: rgb(16 185 129 / 0.16);
+    --number-paid-border: var(--c-emerald-500);
+    --number-paid-text: var(--c-emerald-200);
+
+    --number-captive-bg: #232a38;
+    --number-captive-border: #4a5468;
+    --number-captive-text: #9aa4b8;
+
+    /* Sombra no escuro nao e cinza translucido: e preto real e mais denso,
+       senao o cartao flutua sem que nada pareca ter subido. */
+    --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.40);
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.45), 0 1px 3px rgb(0 0 0 / 0.35);
+    --shadow-md: 0 2px 4px rgb(0 0 0 / 0.40), 0 6px 16px rgb(0 0 0 / 0.45);
+    --shadow-lg: 0 4px 8px rgb(0 0 0 / 0.40), 0 16px 32px rgb(0 0 0 / 0.55);
+    --shadow-xl: 0 8px 16px rgb(0 0 0 / 0.45), 0 28px 56px rgb(0 0 0 / 0.60);
+    --shadow-inset: inset 0 1px 0 rgb(255 255 255 / 0.05);
+  }
+}
+
+/* Mesmo bloco, agora por escolha explicita do usuario. Repetido em vez de
+   agrupado com virgula: um seletor invalido em navegador antigo derrubaria a
+   regra inteira, e o modo automatico e o que a maioria usa. */
+:root[data-theme='dark'] {
+  --bg: var(--c-slate-950);
+  --bg-subtle: var(--c-slate-900);
+  --surface: var(--c-slate-900);
+  --surface-elevated: var(--c-slate-800);
+  --surface-sunken: #090b11;
+  --surface-inverse: var(--c-slate-0);
+  --surface-brand-soft: rgb(var(--brand-500-rgb) / 0.14);
+
+  --border: #2b3242;
+  --border-strong: #3b4354;
+  --border-subtle: #1d2230;
+  --border-inverse: rgb(13 16 23 / 0.12);
+
+  --text: #f2f4f8;
+  --text-muted: #9aa4b8;
+  --text-subtle: #6b7589;
+  --text-inverse: var(--c-slate-950);
+  --text-on-brand: #ffffff;
+
+  --primary: var(--brand-400);
+  --primary-hover: var(--brand-300);
+  --primary-active: var(--brand-200);
+  --primary-soft: rgb(var(--brand-500-rgb) / 0.16);
+  --primary-soft-hover: rgb(var(--brand-500-rgb) / 0.24);
+  --primary-border: rgb(var(--brand-500-rgb) / 0.42);
+  --primary-text: var(--brand-300);
+
+  --success: var(--c-emerald-400);
+  --success-soft: rgb(16 185 129 / 0.14);
+  --success-border: rgb(16 185 129 / 0.40);
+  --success-text: var(--c-emerald-200);
+
+  --warning: var(--c-amber-400);
+  --warning-soft: rgb(245 158 11 / 0.14);
+  --warning-border: rgb(245 158 11 / 0.40);
+  --warning-text: var(--c-amber-200);
+
+  --danger: var(--c-rose-400);
+  --danger-hover: var(--c-rose-300);
+  --danger-soft: rgb(244 63 94 / 0.14);
+  --danger-border: rgb(244 63 94 / 0.40);
+  --danger-text: var(--c-rose-200);
+
+  --info: var(--c-blue-500);
+  --info-soft: rgb(59 130 246 / 0.14);
+  --info-border: rgb(59 130 246 / 0.40);
+  --info-text: var(--c-blue-200);
+
+  --number-free-bg: var(--c-slate-800);
+  --number-free-border: #3f4759;
+  --number-free-text: #d6dbe5;
+  --number-free-hover-bg: rgb(var(--brand-500-rgb) / 0.22);
+  --number-free-hover-border: var(--brand-400);
+
+  --number-selected-bg: var(--brand-500);
+  --number-selected-border: var(--brand-300);
+  --number-selected-text: #ffffff;
+
+  --number-reserved-bg: rgb(245 158 11 / 0.16);
+  --number-reserved-border: var(--c-amber-500);
+  --number-reserved-text: var(--c-amber-200);
+
+  --number-pending-bg: rgb(59 130 246 / 0.16);
+  --number-pending-border: var(--c-blue-500);
+  --number-pending-text: var(--c-blue-200);
+
+  --number-paid-bg: rgb(16 185 129 / 0.16);
+  --number-paid-border: var(--c-emerald-500);
+  --number-paid-text: var(--c-emerald-200);
+
+  --number-captive-bg: #232a38;
+  --number-captive-border: #4a5468;
+  --number-captive-text: #9aa4b8;
+
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.40);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.45), 0 1px 3px rgb(0 0 0 / 0.35);
+  --shadow-md: 0 2px 4px rgb(0 0 0 / 0.40), 0 6px 16px rgb(0 0 0 / 0.45);
+  --shadow-lg: 0 4px 8px rgb(0 0 0 / 0.40), 0 16px 32px rgb(0 0 0 / 0.55);
+  --shadow-xl: 0 8px 16px rgb(0 0 0 / 0.45), 0 28px 56px rgb(0 0 0 / 0.60);
+  --shadow-inset: inset 0 1px 0 rgb(255 255 255 / 0.05);
+}

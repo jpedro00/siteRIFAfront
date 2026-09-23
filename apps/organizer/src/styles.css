@@ -1,0 +1,458 @@
+/* ==========================================================================
+   RIFAS · painel do organizador
+   --------------------------------------------------------------------------
+   Tokens, base, primitivas e o casco do painel vem do pacote compartilhado.
+   Aqui ficam apenas as pecas proprias desta aplicacao.
+   ========================================================================== */
+
+@import '@campaigns/shared/styles/tokens.css';
+@import '@campaigns/shared/styles/base.css';
+@import '@campaigns/shared/styles/components.css';
+@import '@campaigns/shared/styles/dashboard.css';
+
+/* --------------------------------------------------------------------------
+   NAVEGACAO INTERNA
+   -------------------------------------------------------------------------- */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.back-link:hover {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+/* --------------------------------------------------------------------------
+   ESCOLHA DO TAMANHO DA GRADE (RN13)
+   --------------------------------------------------------------------------
+   Radios desenhados como cartoes. Cada opcao mostra a FAIXA de rotulos real
+   (00–99, 000–499, 000–999) porque "500" sozinho nao diz se a numeracao
+   comeca em 0 ou em 1 — e essa duvida so apareceria depois, com o sorteio
+   publicado e a grade impossivel de mudar.
+
+   O <input> continua la, so que visualmente escondido: setas do teclado,
+   leitor de tela e envio do formulario seguem funcionando como num radio
+   comum, porque e um radio comum.
+   -------------------------------------------------------------------------- */
+.grid-choice {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-3);
+}
+
+.grid-choice__option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+.grid-choice__option:hover {
+  border-color: var(--border-strong);
+}
+
+.grid-choice__option.is-selected {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+/* O anel de foco vai no CARTAO, porque o input real esta escondido: sem isto
+   quem navega por teclado nao veria onde esta. */
+.grid-choice__option:focus-within {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.grid-choice__check {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border-strong);
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  color: transparent;
+}
+
+.grid-choice__option.is-selected .grid-choice__check {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--text-on-brand);
+}
+
+.grid-choice__value {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-extrabold);
+  letter-spacing: var(--tracking-tight);
+  font-variant-numeric: tabular-nums;
+}
+
+.grid-choice__range {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   LISTA DE DETALHES
+   -------------------------------------------------------------------------- */
+.detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.detail-list__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--text-sm);
+}
+
+.detail-list__row:last-child {
+  border-bottom: none;
+}
+
+.detail-list__row dt {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.detail-list__row dd {
+  font-weight: var(--weight-semibold);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.detail-text {
+  color: var(--text-muted);
+  line-height: var(--leading-relaxed);
+  white-space: pre-line;
+}
+
+/* --------------------------------------------------------------------------
+   NUMEROS OCUPADOS
+   --------------------------------------------------------------------------
+   O painel mostra so o que esta OCUPADO, nao a grade inteira. Quem opera quer
+   saber o que ja saiu; desenhar mil celulas livres aqui nao acrescentaria uma
+   informacao e custaria o mesmo que a grade da vitrine.
+   -------------------------------------------------------------------------- */
+.taken-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.taken-number {
+  min-width: 46px;
+  padding: var(--space-1) var(--space-2);
+  border: 2px solid;
+  border-radius: var(--radius-sm);
+  text-align: center;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.taken-number.is-reservado {
+  background: var(--number-reserved-bg);
+  border-color: var(--number-reserved-border);
+  color: var(--number-reserved-text);
+  border-style: dashed;
+}
+
+.taken-number.is-pendente {
+  background: var(--number-pending-bg);
+  border-color: var(--number-pending-border);
+  color: var(--number-pending-text);
+  border-style: dashed;
+}
+
+.taken-number.is-pago {
+  background: var(--number-paid-bg);
+  border-color: var(--number-paid-border);
+  color: var(--number-paid-text);
+}
+
+/* Legenda reaproveitada do vocabulario da vitrine, para que o mesmo estado
+   tenha a mesma aparencia nos dois lados do produto. */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+}
+
+.legend__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.legend__swatch {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: var(--radius-xs);
+  border: 2px solid;
+}
+
+.legend__swatch.is-reserved {
+  background: var(--number-reserved-bg);
+  border-color: var(--number-reserved-border);
+  border-style: dashed;
+}
+
+.legend__swatch.is-pending {
+  background: var(--number-pending-bg);
+  border-color: var(--number-pending-border);
+  border-style: dashed;
+}
+
+.legend__swatch.is-paid {
+  background: var(--number-paid-bg);
+  border-color: var(--number-paid-border);
+}
+
+/* --------------------------------------------------------------------------
+   ETIQUETAS
+   -------------------------------------------------------------------------- */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  margin-right: var(--space-2);
+  border: 1px solid var(--primary-border);
+  border-radius: var(--radius-full);
+  background: var(--primary-soft);
+  color: var(--primary-text);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+}
+
+.perm-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.perm-list code {
+  display: inline-block;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+/* --------------------------------------------------------------------------
+   ESTADOS SIMPLES
+   -------------------------------------------------------------------------- */
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-10) var(--space-5);
+  text-align: center;
+}
+
+.state h2 {
+  font-size: var(--text-lg);
+}
+
+.state p {
+  color: var(--text-muted);
+  max-width: 52ch;
+}
+
+.state__code {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-subtle);
+}
+
+/* --------------------------------------------------------------------------
+   COMPATIBILIDADE COM AS TELAS AINDA NAO REDESENHADAS
+   --------------------------------------------------------------------------
+   AuthGate, Equipe e Auditoria usam marcacao anterior (`.auth__box`, `.field`
+   com <label>/<input> sem classe, `button[data-variant]`). Em vez de reescrever
+   essas telas agora — o que aumentaria a area de mudanca sem necessidade —,
+   as regras abaixo ligam a marcacao antiga aos MESMOS tokens do restante do
+   sistema. Elas nao sao um segundo tema: sao um adaptador, e saem quando cada
+   tela for migrada para as classes novas.
+   -------------------------------------------------------------------------- */
+.auth__box {
+  width: 100%;
+  max-width: 420px;
+  padding: var(--space-7);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.auth__box h1 {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-extrabold);
+  letter-spacing: var(--tracking-tight);
+}
+
+.field > label {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text);
+}
+
+.field > input,
+.field > select,
+.field > textarea {
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font-size: var(--text-md);
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.field > input:focus,
+.field > select:focus,
+.field > textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: var(--focus-ring);
+}
+
+/* Botao sem classe dentro das telas antigas. */
+.auth__box button,
+.card button:not([class]),
+.state button:not([class]) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--touch-target);
+  padding: var(--space-3) var(--space-5);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+
+.auth__box button:hover:not(:disabled),
+.card button:not([class]):hover:not(:disabled),
+.state button:not([class]):hover:not(:disabled) {
+  background: var(--bg-subtle);
+  border-color: var(--text-subtle);
+}
+
+button[data-variant='primary'] {
+  background: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: var(--text-on-brand) !important;
+  box-shadow: var(--shadow-brand);
+}
+
+button[data-variant='primary']:hover:not(:disabled) {
+  background: var(--primary-hover) !important;
+  border-color: var(--primary-hover) !important;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.form-error {
+  display: block;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius-md);
+  background: var(--danger-soft);
+  color: var(--danger-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+/* `.card` sem `.card__body`: as telas antigas poem o conteudo direto dentro. */
+.card:not(:has(.card__body)) {
+  padding: var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.card:not(:has(.card__body)) > h2 {
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-2);
+}
+
+.card:not(:has(.card__body)) > p + p,
+.card:not(:has(.card__body)) > ul {
+  margin-top: var(--space-3);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar h2 {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-extrabold);
+  letter-spacing: var(--tracking-tight);
+}

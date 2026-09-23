@@ -1,0 +1,1052 @@
+/* ==========================================================================
+   RIFAS · primitivas de interface
+   --------------------------------------------------------------------------
+   As pecas que os tres aplicativos usam igual: botao, campo, cartao, selo,
+   esqueleto, aviso, tabela, gaveta. O que e proprio da vitrine mora em
+   apps/storefront/src/styles.css; o que e proprio do painel, em dashboard.css.
+
+   Convencao de nome: bloco__elemento--modificador. Uma classe por peca, sem
+   aninhamento profundo — quem le o JSX consegue prever o CSS.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   CONTAINER E PILHAS
+   -------------------------------------------------------------------------- */
+.container {
+  width: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.container--wide {
+  max-width: var(--container-wide);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.stack--sm { gap: var(--space-2); }
+.stack--lg { gap: var(--space-6); }
+.stack--xl { gap: var(--space-8); }
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.row--between {
+  justify-content: space-between;
+}
+
+.row--wrap {
+  flex-wrap: wrap;
+}
+
+/* --------------------------------------------------------------------------
+   BOTAO
+   --------------------------------------------------------------------------
+   Altura minima igual ao alvo de toque. O `translateY(1px)` no :active e a
+   microinteracao mais barata que existe e a que mais importa no celular: e a
+   confirmacao tatil de que o toque pegou, antes de a rede responder.
+   -------------------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--touch-target);
+  padding: var(--space-3) var(--space-5);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  line-height: 1.2;
+  letter-spacing: var(--tracking-snug);
+  white-space: nowrap;
+  text-decoration: none;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.btn:hover {
+  text-decoration: none;
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn:disabled,
+.btn[aria-disabled='true'] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn svg {
+  flex-shrink: 0;
+}
+
+/* Primario — a acao que o produto quer que aconteca. Um por tela. */
+.btn--primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--text-on-brand);
+  box-shadow: var(--shadow-brand);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  color: var(--text-on-brand);
+}
+
+.btn--primary:active:not(:disabled) {
+  background: var(--primary-active);
+}
+
+/* Secundario — contornado, convive com o primario sem disputar. */
+.btn--secondary {
+  background: var(--surface);
+  border-color: var(--border-strong);
+  color: var(--text);
+  box-shadow: var(--shadow-xs);
+}
+
+.btn--secondary:hover:not(:disabled) {
+  background: var(--bg-subtle);
+  border-color: var(--text-subtle);
+  color: var(--text);
+}
+
+/* Suave — acao de apoio com cor de marca, sem o peso do preenchido. */
+.btn--soft {
+  background: var(--primary-soft);
+  border-color: transparent;
+  color: var(--primary-text);
+}
+
+.btn--soft:hover:not(:disabled) {
+  background: var(--primary-soft-hover);
+  color: var(--primary-text);
+}
+
+/* Fantasma — navegacao e acoes terciarias. */
+.btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-muted);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  background: var(--bg-subtle);
+  color: var(--text);
+}
+
+.btn--danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.btn--danger:hover:not(:disabled) {
+  background: var(--danger-hover);
+  border-color: var(--danger-hover);
+  color: #fff;
+}
+
+.btn--danger-ghost {
+  background: transparent;
+  border-color: var(--danger-border);
+  color: var(--danger-text);
+}
+
+.btn--danger-ghost:hover:not(:disabled) {
+  background: var(--danger-soft);
+}
+
+.btn--danger:focus-visible,
+.btn--danger-ghost:focus-visible {
+  outline-color: var(--danger);
+}
+
+/* Tamanhos. O `sm` fica abaixo do alvo de toque de proposito: e para barra
+   de ferramentas e celula de tabela no desktop, onde ha ponteiro. Nao use
+   em fluxo de compra no celular. */
+.btn--sm {
+  min-height: 34px;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  border-radius: var(--radius-sm);
+}
+
+/* A regra acima ja dizia "nao use em fluxo de compra no celular" — e a barra de
+   ferramentas da grade de numeros usava mesmo assim. Medido em 360 e 390 px:
+   "+1", "+5", "+10", "Surpreenda-me" e "Limpar" saiam com 34 px de altura, num
+   dedo, na tela onde a compra acontece.
+
+   Em vez de trocar a classe em cada ponto de uso — e confiar que ninguem
+   esqueca no proximo —, o proprio botao passa a respeitar o alvo de toque onde
+   nao ha ponteiro fino. `pointer: coarse` e a pergunta certa: nao "a tela e
+   estreita", e sim "quem aponta aqui e um dedo". Um tablet grande com toque
+   ganha o alvo confortavel; um desktop estreito mantem a densidade. */
+@media (pointer: coarse) {
+  .btn--sm {
+    min-height: var(--touch-target);
+    padding-block: var(--space-2);
+  }
+}
+
+.btn--lg {
+  min-height: 52px;
+  padding: var(--space-4) var(--space-7);
+  font-size: var(--text-md);
+  border-radius: var(--radius-lg);
+}
+
+.btn--block {
+  width: 100%;
+}
+
+/* Botao so de icone: quadrado, e OBRIGATORIAMENTE com aria-label no JSX —
+   sem rotulo visivel, o leitor de tela anuncia "botao" e nada mais. */
+.btn--icon {
+  padding: 0;
+  width: var(--touch-target);
+  min-width: var(--touch-target);
+}
+
+.btn--icon.btn--sm {
+  width: 34px;
+  min-width: 34px;
+}
+
+/* Estado de carregamento: o rotulo fica no lugar (para a largura nao pular)
+   e o giro entra ao lado. */
+.btn__spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: var(--radius-full);
+  animation: rifas-spin 640ms linear infinite;
+}
+
+@keyframes rifas-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* --------------------------------------------------------------------------
+   CAMPO DE FORMULARIO
+   -------------------------------------------------------------------------- */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.field__label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text);
+  letter-spacing: var(--tracking-snug);
+}
+
+.field__required {
+  color: var(--danger);
+  margin-left: 2px;
+}
+
+.field__hint {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: var(--leading-snug);
+}
+
+.field__input,
+.field__select,
+.field__textarea {
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font-size: var(--text-md); /* 16px: abaixo disso o iOS da zoom ao focar */
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+.field__textarea {
+  min-height: 108px;
+  padding-top: var(--space-3);
+  resize: vertical;
+  line-height: var(--leading-normal);
+}
+
+.field__select {
+  appearance: none;
+  padding-right: var(--space-9);
+  /* Seta desenhada em CSS: uma imagem a menos para baixar, e ela acompanha
+     a cor do texto no modo escuro. */
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    calc(100% - 20px) calc(50% + 2px),
+    calc(100% - 14px) calc(50% + 2px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
+.field__input::placeholder,
+.field__textarea::placeholder {
+  color: var(--text-subtle);
+}
+
+.field__input:hover:not(:disabled),
+.field__select:hover:not(:disabled),
+.field__textarea:hover:not(:disabled) {
+  border-color: var(--text-subtle);
+}
+
+.field__input:focus,
+.field__select:focus,
+.field__textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: var(--focus-ring);
+}
+
+.field__input:disabled,
+.field__select:disabled,
+.field__textarea:disabled {
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+/* Campo invalido. A cor e o reforco; quem informa e a mensagem em
+   `.field__error`, ligada ao input por aria-describedby. */
+.field--invalid .field__input,
+.field--invalid .field__select,
+.field--invalid .field__textarea {
+  border-color: var(--danger);
+}
+
+.field--invalid .field__input:focus,
+.field--invalid .field__select:focus,
+.field--invalid .field__textarea:focus {
+  box-shadow: var(--focus-ring-danger);
+}
+
+.field__error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--danger-text);
+  line-height: var(--leading-snug);
+}
+
+.field__error svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Prefixo fixo dentro do campo (R$, @, +55). */
+.field__group {
+  display: flex;
+  align-items: stretch;
+}
+
+.field__prefix {
+  display: flex;
+  align-items: center;
+  padding-inline: var(--space-4);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-strong);
+  border-right: none;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
+.field__group .field__input {
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+/* Caixa de marcacao com area de clique grande: o alvo e a linha inteira. */
+.checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  margin: calc(var(--space-3) * -1);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.checkbox:hover {
+  background: var(--bg-subtle);
+}
+
+.checkbox__input {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin: 1px 0 0;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.checkbox__text {
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--text);
+}
+
+.fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.fieldset__legend {
+  padding: 0;
+  margin-bottom: var(--space-1);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+  color: var(--text);
+}
+
+.fieldset__caption {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin-top: calc(var(--space-1) * -1);
+}
+
+/* Duas colunas que viram uma no celular. */
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-5);
+}
+
+/* --------------------------------------------------------------------------
+   CARTAO
+   -------------------------------------------------------------------------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.card--elevated {
+  background: var(--surface-elevated);
+  box-shadow: var(--shadow-md);
+}
+
+.card--flat {
+  box-shadow: none;
+}
+
+.card--interactive {
+  transition:
+    border-color var(--duration-base) var(--ease-out),
+    box-shadow var(--duration-base) var(--ease-out),
+    transform var(--duration-base) var(--ease-out);
+}
+
+.card--interactive:hover {
+  border-color: var(--primary-border);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.card__body {
+  padding: var(--space-5);
+}
+
+.card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.card__title {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+}
+
+.card__subtitle {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin-top: var(--space-1);
+}
+
+.card__footer {
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-sunken);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+/* --------------------------------------------------------------------------
+   SELO
+   --------------------------------------------------------------------------
+   Sempre com um ponto colorido antes do texto. O ponto e o que permite
+   distinguir dois selos numa captura em tons de cinza — e para quem nao
+   diferencia matiz, e a forma que resta.
+   -------------------------------------------------------------------------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.badge__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.badge--neutral {
+  background: var(--bg-subtle);
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
+.badge--brand {
+  background: var(--primary-soft);
+  border-color: var(--primary-border);
+  color: var(--primary-text);
+}
+
+.badge--success {
+  background: var(--success-soft);
+  border-color: var(--success-border);
+  color: var(--success-text);
+}
+
+.badge--warning {
+  background: var(--warning-soft);
+  border-color: var(--warning-border);
+  color: var(--warning-text);
+}
+
+.badge--danger {
+  background: var(--danger-soft);
+  border-color: var(--danger-border);
+  color: var(--danger-text);
+}
+
+.badge--info {
+  background: var(--info-soft);
+  border-color: var(--info-border);
+  color: var(--info-text);
+}
+
+.badge--lg {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+}
+
+/* Selo com pulso para "ao vivo"/"em andamento". O pulso respeita movimento
+   reduzido pela regra global de base.css. */
+.badge--live .badge__dot {
+  animation: rifas-pulse 2s var(--ease-in-out) infinite;
+}
+
+@keyframes rifas-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+/* --------------------------------------------------------------------------
+   ESQUELETO
+   --------------------------------------------------------------------------
+   Preferido ao "Carregando…" porque preserva o layout: a pagina nao salta
+   quando o dado chega. `aria-hidden` no JSX, com um aviso em aria-live
+   contando o que esta acontecendo — o leitor de tela nao deve narrar barras
+   cinzas.
+   -------------------------------------------------------------------------- */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(var(--brand-500-rgb) / 0.07),
+    transparent
+  );
+  animation: rifas-shimmer 1.4s var(--ease-in-out) infinite;
+}
+
+@keyframes rifas-shimmer {
+  100% { transform: translateX(100%); }
+}
+
+.skeleton--text {
+  height: 0.9em;
+  border-radius: var(--radius-xs);
+  margin-block: 0.25em;
+}
+
+.skeleton--title {
+  height: 1.6em;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton--block {
+  height: 120px;
+  border-radius: var(--radius-md);
+}
+
+.skeleton--circle {
+  border-radius: var(--radius-full);
+}
+
+/* --------------------------------------------------------------------------
+   AVISO
+   -------------------------------------------------------------------------- */
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-subtle);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+.alert__icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.alert__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.alert__title {
+  font-weight: var(--weight-bold);
+  margin-bottom: var(--space-1);
+}
+
+.alert--info {
+  background: var(--info-soft);
+  border-color: var(--info-border);
+  color: var(--info-text);
+}
+
+.alert--success {
+  background: var(--success-soft);
+  border-color: var(--success-border);
+  color: var(--success-text);
+}
+
+.alert--warning {
+  background: var(--warning-soft);
+  border-color: var(--warning-border);
+  color: var(--warning-text);
+}
+
+.alert--danger {
+  background: var(--danger-soft);
+  border-color: var(--danger-border);
+  color: var(--danger-text);
+}
+
+/* --------------------------------------------------------------------------
+   ESTADO VAZIO / ERRO
+   -------------------------------------------------------------------------- */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-4);
+  padding: var(--space-10) var(--space-5);
+}
+
+.empty-state__icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-full);
+  background: var(--primary-soft);
+  color: var(--primary-text);
+}
+
+.empty-state__title {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+}
+
+.empty-state__text {
+  max-width: 44ch;
+  color: var(--text-muted);
+  font-size: var(--text-base);
+}
+
+.empty-state__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: center;
+  margin-top: var(--space-2);
+}
+
+.empty-state--danger .empty-state__icon {
+  background: var(--danger-soft);
+  color: var(--danger-text);
+}
+
+/* --------------------------------------------------------------------------
+   BARRA DE PROGRESSO
+   -------------------------------------------------------------------------- */
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.progress__track {
+  position: relative;
+  height: 8px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progress__fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: linear-gradient(90deg, var(--brand-500), var(--brand-400));
+  transition: width var(--duration-slow) var(--ease-out);
+  /* Largura minima para que 1 numero vendido em 1000 ainda apareca: uma
+     barra vazia quando ja houve venda parece um sistema quebrado. */
+  min-width: 3px;
+}
+
+.progress__fill--success {
+  background: linear-gradient(90deg, var(--c-emerald-600), var(--c-emerald-400));
+}
+
+.progress__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.progress__value {
+  font-weight: var(--weight-bold);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.progress--lg .progress__track {
+  height: 12px;
+}
+
+/* --------------------------------------------------------------------------
+   TABELA
+   -------------------------------------------------------------------------- */
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  -webkit-overflow-scrolling: touch;
+}
+
+.table {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--text-sm);
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-sunken);
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* `th` junto de `td`: uma tabela pode ter cabecalho de LINHA (`<th scope="row">`),
+   que e a marcacao correta para matrizes — a de permissoes por papel, por
+   exemplo. Sem o `th` aqui, a primeira coluna dessas tabelas ficaria sem
+   espacamento enquanto o resto da linha tem. */
+.table tbody td,
+.table tbody th {
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text);
+  vertical-align: middle;
+}
+
+/* Cabecalho de linha: alinhado a esquerda e sem o fundo do cabecalho de
+   coluna, que so faz sentido no topo. */
+.table tbody th {
+  text-align: left;
+  font-weight: var(--weight-semibold);
+  background: transparent;
+}
+
+.table tbody tr:last-child td,
+.table tbody tr:last-child th {
+  border-bottom: none;
+}
+
+/* Trecho tecnico dentro da tabela — nome de acao na trilha de auditoria,
+   identificador. Mesma aparencia de ficha usada no resto do produto. */
+.table code {
+  display: inline-block;
+  padding: 2px var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.table tbody tr {
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.table tbody tr:hover {
+  background: var(--surface-sunken);
+}
+
+.table__num {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.table__actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.table__primary {
+  font-weight: var(--weight-semibold);
+  color: var(--text);
+}
+
+.table__secondary {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   GAVETA / FOLHA INFERIOR
+   --------------------------------------------------------------------------
+   No celular sobe de baixo (bottom sheet); a partir de 768px vira painel
+   lateral. `dvh` em vez de `vh` porque a barra do navegador movel muda de
+   altura ao rolar, e `vh` deixaria a folha cortada.
+   -------------------------------------------------------------------------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  background: rgb(13 16 23 / 0.5);
+  backdrop-filter: blur(2px);
+  animation: rifas-fade-in var(--duration-base) var(--ease-out);
+}
+
+@keyframes rifas-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.sheet {
+  position: fixed;
+  z-index: var(--z-modal);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 88dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-elevated);
+  border-top: 1px solid var(--border);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  box-shadow: var(--shadow-xl);
+  animation: rifas-slide-up var(--duration-slow) var(--ease-out);
+  /* Nao encostar no gesto de home do iPhone. */
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+@keyframes rifas-slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.sheet__handle {
+  width: 40px;
+  height: 4px;
+  margin: var(--space-3) auto var(--space-1);
+  border-radius: var(--radius-full);
+  background: var(--border-strong);
+  flex-shrink: 0;
+}
+
+.sheet__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.sheet__title {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+}
+
+.sheet__body {
+  padding: var(--space-5);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.sheet__footer {
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--border);
+  background: var(--surface-elevated);
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .sheet {
+    top: 0;
+    left: auto;
+    width: min(440px, 100%);
+    max-height: none;
+    border-radius: 0;
+    border-left: 1px solid var(--border);
+    border-top: none;
+    animation: rifas-slide-left var(--duration-slow) var(--ease-out);
+  }
+
+  @keyframes rifas-slide-left {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+  }
+
+  .sheet__handle {
+    display: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   UTILITARIOS
+   --------------------------------------------------------------------------
+   Poucos e de proposito. Utilitario demais vira Tailwind caseiro sem as
+   garantias do Tailwind.
+   -------------------------------------------------------------------------- */
+.muted { color: var(--text-muted); }
+.subtle { color: var(--text-subtle); }
+.tabular { font-variant-numeric: tabular-nums; }
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eyebrow {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  color: var(--primary-text);
+}
+
+.divider {
+  height: 1px;
+  background: var(--border);
+  border: none;
+  margin: 0;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--primary);
+  border-radius: var(--radius-full);
+  animation: rifas-spin 640ms linear infinite;
+}

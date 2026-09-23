@@ -1,0 +1,1834 @@
+/* ==========================================================================
+   RIFAS · vitrine
+   --------------------------------------------------------------------------
+   Estilos proprios da experiencia publica. Tokens, base e primitivas vem do
+   pacote compartilhado — nenhuma cor literal nasce aqui.
+
+   A vitrine e MOBILE FIRST de verdade: as regras abaixo descrevem o telefone,
+   e as media queries ACRESCENTAM largura. O caminho contrario (desenhar o
+   desktop e depois espremer) e o que produz grade ilegivel e botao de compra
+   fora da tela.
+   ========================================================================== */
+
+@import '@campaigns/shared/styles/tokens.css';
+@import '@campaigns/shared/styles/base.css';
+@import '@campaigns/shared/styles/components.css';
+
+/* --------------------------------------------------------------------------
+   ESQUELETO DA PAGINA
+   -------------------------------------------------------------------------- */
+.site {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.site__main {
+  flex: 1;
+  /* Espaco para a barra de selecao fixa nao cobrir o fim do conteudo. */
+  padding-bottom: var(--space-9);
+}
+
+.page {
+  padding-block: var(--space-6) var(--space-9);
+}
+
+.page__title {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-extrabold);
+  letter-spacing: var(--tracking-tight);
+}
+
+.page__description {
+  margin-top: var(--space-2);
+  color: var(--text-muted);
+}
+
+.page__header {
+  margin-bottom: var(--space-2);
+}
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-10) var(--space-4);
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.back-link:hover {
+  color: var(--text);
+  text-decoration: none;
+}
+
+/* "Todos os sorteios" media 126x20 no celular — alto demais para o olho, baixo
+   demais para o dedo. O alvo cresce so onde se toca; a margem inferior cede a
+   diferenca para o espacamento da pagina nao mudar junto. */
+@media (pointer: coarse) {
+  .back-link {
+    min-height: var(--touch-target);
+    margin-bottom: var(--space-3);
+  }
+}
+
+.prose__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  margin-bottom: var(--space-3);
+}
+
+.prose p {
+  color: var(--text-muted);
+  line-height: var(--leading-relaxed);
+  white-space: pre-line;
+}
+
+.rules {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  color: var(--text-muted);
+  line-height: var(--leading-normal);
+}
+
+.rules li {
+  position: relative;
+  padding-left: var(--space-5);
+}
+
+.rules li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--primary);
+}
+
+/* --------------------------------------------------------------------------
+   CABECALHO PUBLICO
+   -------------------------------------------------------------------------- */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
+  background: rgb(from var(--surface) r g b / 0.88);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  transition: box-shadow var(--duration-base) var(--ease-out);
+}
+
+@supports not (background: rgb(from white r g b / 0.5)) {
+  .site-header {
+    background: var(--surface);
+  }
+}
+
+/* Ao rolar: encolhe e ganha sombra. No celular isso devolve 8px de altura
+   util — pouco no papel, perceptivel numa tela de 667px. */
+.site-header.is-compact {
+  box-shadow: var(--shadow-sm);
+}
+
+.site-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  height: var(--header-height);
+  transition: height var(--duration-base) var(--ease-out);
+}
+
+.site-header.is-compact .site-header__inner {
+  height: var(--header-height-compact);
+}
+
+.site-header__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  color: var(--text);
+}
+
+.site-header__brand:hover {
+  text-decoration: none;
+  color: var(--text);
+}
+
+.site-header__mark {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
+  color: #fff;
+  box-shadow: var(--shadow-brand);
+}
+
+.site-header__name {
+  font-size: var(--text-md);
+  font-weight: var(--weight-extrabold);
+  letter-spacing: var(--tracking-tight);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.site-header__nav {
+  display: none;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.site-header__link {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.site-header__link:hover {
+  background: var(--bg-subtle);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.site-header__link.is-active {
+  color: var(--primary-text);
+  background: var(--primary-soft);
+}
+
+.site-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.site-header__signin {
+  display: none;
+}
+
+.site-header__account {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  color: var(--text);
+}
+
+.site-header__account:hover {
+  border-color: var(--border-strong);
+  text-decoration: none;
+  color: var(--text);
+}
+
+.site-header__avatar {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--brand-400), var(--brand-600));
+  color: #fff;
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-bold);
+}
+
+.site-header__account-name {
+  display: none;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.mobile-menu {
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  padding: var(--space-3) var(--gutter) var(--space-5);
+  animation: rifas-fade-in var(--duration-base) var(--ease-out);
+}
+
+.mobile-menu__nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-width: var(--container-max);
+  margin-inline: auto;
+}
+
+.mobile-menu__link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--touch-target);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+}
+
+.mobile-menu__link:hover {
+  background: var(--bg-subtle);
+  text-decoration: none;
+}
+
+.mobile-menu__link.is-active {
+  background: var(--primary-soft);
+  color: var(--primary-text);
+}
+
+/* --------------------------------------------------------------------------
+   RODAPE
+   -------------------------------------------------------------------------- */
+.site-footer {
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  padding-block: var(--space-7);
+}
+
+.site-footer__inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.site-footer__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.site-footer__mark {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  background: var(--primary-soft);
+  color: var(--primary-text);
+}
+
+.site-footer__name {
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-snug);
+}
+
+.site-footer__tagline {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.site-footer__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+  font-size: var(--text-sm);
+}
+
+.site-footer__nav a {
+  color: var(--text-muted);
+  font-weight: var(--weight-medium);
+}
+
+.site-footer__nav a:hover {
+  color: var(--text);
+}
+
+/* Os tres links do rodape saiam com 20 px de altura no celular. Sao o unico
+   caminho de volta depois de rolar a pagina inteira, entao errar o toque ali
+   custa uma rolagem de volta ao topo.
+
+   `align-items: center` mantem o texto na mesma linha de base de antes: o que
+   cresce e a area sensivel, nao o espacamento visivel entre os itens. */
+@media (pointer: coarse) {
+  .site-footer__nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-target);
+  }
+}
+
+.site-footer__legal {
+  font-size: var(--text-xs);
+  color: var(--text-subtle);
+}
+
+/* --------------------------------------------------------------------------
+   IMAGEM DO PREMIO
+   -------------------------------------------------------------------------- */
+.prize-image {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--bg-subtle);
+}
+
+.prize-image--wide { aspect-ratio: 16 / 10; }
+.prize-image--square { aspect-ratio: 1 / 1; }
+
+.prize-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Marcador para sorteio sem foto. Desenhado em CSS, sem imagem de exemplo. */
+.prize-image--empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  color: var(--text-subtle);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+}
+
+.hero .prize-image--empty,
+.draw-layout__main > .prize-image--empty {
+  aspect-ratio: auto;
+  height: clamp(136px, 22vw, 220px);
+}
+
+.prize-image__caption {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+}
+
+/* --------------------------------------------------------------------------
+   HERO
+   -------------------------------------------------------------------------- */
+.hero {
+  display: grid;
+  gap: var(--space-6);
+  padding-block: var(--space-6) var(--space-8);
+}
+
+.hero__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.hero__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.hero__title {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-extrabold);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+}
+
+.hero__subtitle {
+  font-size: var(--text-lg);
+  color: var(--text-muted);
+  font-weight: var(--weight-medium);
+  margin-top: calc(var(--space-2) * -1);
+}
+
+.hero__description {
+  color: var(--text-muted);
+  line-height: var(--leading-relaxed);
+}
+
+/* Bloco de preco: o dado mais importante da tela, tratado como tal. */
+.hero__price {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
+  border-radius: var(--radius-md);
+}
+
+.hero__price-label {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  font-weight: var(--weight-medium);
+}
+
+.hero__price-value {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-extrabold);
+  letter-spacing: var(--tracking-tight);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.hero__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.hero__cta {
+  width: 100%;
+}
+
+.hero__total-hint {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.trust {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.trust__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.trust__item svg {
+  color: var(--success);
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+   HOME · secoes
+   -------------------------------------------------------------------------- */
+.home__section {
+  padding-block: var(--space-7);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.home__section-title {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-extrabold);
+  letter-spacing: var(--tracking-tight);
+}
+
+.draw-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-5);
+}
+
+.draw-card {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.draw-card .prize-image {
+  border-radius: 0;
+}
+
+.draw-card .prize-image--empty {
+  aspect-ratio: auto;
+  height: clamp(112px, 32vw, 160px);
+}
+
+.draw-card__title {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+}
+
+/* O link estica sobre o cartao inteiro — area de clique grande sem trocar o
+   <a> por um <div> com onClick, que nao e focavel nem anunciavel. */
+.draw-card__link {
+  color: var(--text);
+}
+
+.draw-card__link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.draw-card {
+  position: relative;
+}
+
+.draw-card__link:hover {
+  color: var(--primary-text);
+  text-decoration: none;
+}
+
+.draw-card__subtitle {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.draw-card__price {
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.draw-card__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--primary-text);
+}
+
+/* Passos de "como participar". */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: var(--space-4);
+  counter-reset: passo;
+}
+
+.step {
+  position: relative;
+  padding: var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.step__icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--primary-soft);
+  color: var(--primary-text);
+}
+
+.step__number {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-5);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-extrabold);
+  color: var(--border);
+  line-height: 1;
+}
+
+.step__title {
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
+  margin-bottom: var(--space-2);
+}
+
+.step__text {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  line-height: var(--leading-normal);
+}
+
+.community {
+  padding: var(--space-6);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+}
+
+.community__title {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-extrabold);
+  letter-spacing: var(--tracking-tight);
+  margin-block: var(--space-2) var(--space-3);
+}
+
+.community__description {
+  color: var(--text-muted);
+  line-height: var(--leading-relaxed);
+  max-width: 62ch;
+}
+
+.community__points {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.community__points li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text);
+}
+
+.community__points svg {
+  color: var(--success);
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+   PAGINA DO SORTEIO
+   -------------------------------------------------------------------------- */
+.draw-layout {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.draw-layout__main {
+  min-width: 0;
+}
+
+.draw-page__title {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-extrabold);
+  letter-spacing: var(--tracking-tight);
+}
+
+.draw-page__subtitle {
+  font-size: var(--text-md);
+  color: var(--text-muted);
+}
+
+.draw-page__grid {
+  margin-top: var(--space-8);
+}
+
+.draw-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-3);
+}
+
+.draw-stat {
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.draw-stat--accent {
+  background: var(--primary-soft);
+  border-color: var(--primary-border);
+}
+
+.draw-stat__label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.draw-stat--accent .draw-stat__label {
+  color: var(--primary-text);
+}
+
+.draw-stat__value {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Painel de compra. No desktop ele GRUDA: a grade e longa e o total precisa
+   acompanhar quem esta escolhendo o numero 940. */
+.buy-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.buy-panel__price {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.buy-panel__price-label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  color: var(--text-muted);
+}
+
+.buy-panel__price-value {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-extrabold);
+  letter-spacing: var(--tracking-tight);
+  font-variant-numeric: tabular-nums;
+}
+
+.buy-panel__lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.buy-panel__line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.buy-panel__line dt {
+  color: var(--text-muted);
+}
+
+.buy-panel__line dd {
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.buy-panel__line--total {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-md);
+}
+
+.buy-panel__line--total dt {
+  color: var(--text);
+  font-weight: var(--weight-semibold);
+}
+
+.buy-panel__line--total dd {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-extrabold);
+  color: var(--primary-text);
+}
+
+.buy-panel__note {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: var(--leading-snug);
+  text-align: center;
+}
+
+/* Fichas dos numeros escolhidos. */
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chip-list--panel {
+  max-height: 148px;
+  overflow-y: auto;
+  padding-right: var(--space-1);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 32px;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--primary-border);
+  border-radius: var(--radius-full);
+  background: var(--primary-soft);
+  color: var(--primary-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.chip:hover {
+  background: var(--primary-soft-hover);
+}
+
+.chip--static,
+.chip-list--static .chip {
+  cursor: default;
+  border-color: var(--border);
+  background: var(--bg-subtle);
+  color: var(--text);
+}
+
+/* --------------------------------------------------------------------------
+   GRADE DE NUMEROS
+   -------------------------------------------------------------------------- */
+.grid-panel {
+  padding: var(--space-5) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.grid-panel__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.grid-panel__title {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-extrabold);
+  letter-spacing: var(--tracking-tight);
+}
+
+.grid-panel__hint {
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+}
+
+.legend__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.legend__swatch {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: var(--radius-xs);
+  border: 2px solid;
+}
+
+/* Cada amostra repete EXATAMENTE fundo, borda e icone da celula real. Uma
+   legenda que nao bate com a grade e pior do que nenhuma. */
+.legend__swatch.is-free {
+  background: var(--number-free-bg);
+  border-color: var(--number-free-border);
+}
+
+.legend__swatch.is-selected {
+  background: var(--number-selected-bg);
+  border-color: var(--number-selected-border);
+  color: var(--number-selected-text);
+}
+
+.legend__swatch.is-reserved {
+  background: var(--number-reserved-bg);
+  border-color: var(--number-reserved-border);
+  color: var(--number-reserved-text);
+}
+
+.legend__swatch.is-pending {
+  background: var(--number-pending-bg);
+  border-color: var(--number-pending-border);
+  color: var(--number-pending-text);
+}
+
+.legend__swatch.is-paid {
+  background: var(--number-paid-bg);
+  border-color: var(--number-paid-border);
+  color: var(--number-paid-text);
+}
+
+.legend__swatch.is-captive {
+  background: var(--number-captive-bg);
+  border-color: var(--number-captive-border);
+  color: var(--number-captive-text);
+}
+
+.grid-tools {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.grid-tools__search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.grid-tools__search-icon {
+  position: absolute;
+  left: var(--space-3);
+  color: var(--text-subtle);
+  pointer-events: none;
+}
+
+.grid-tools__input {
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: var(--space-3) var(--space-9) var(--space-3) var(--space-9);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  font-size: var(--text-md);
+  color: var(--text);
+}
+
+.grid-tools__input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: var(--focus-ring);
+}
+
+.grid-tools__clear {
+  position: absolute;
+  right: var(--space-2);
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  color: var(--text-muted);
+}
+
+.grid-tools__clear:hover {
+  background: var(--bg-subtle);
+  color: var(--text);
+}
+
+.grid-tools__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.grid-tools__status {
+  min-height: 1.4em;
+  margin-top: var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--primary-text);
+}
+
+.grid-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  margin-top: var(--space-5);
+}
+
+/*
+  `content-visibility: auto` e o que torna a grade de 1000 viavel sem
+  virtualizacao: o navegador pula layout e pintura de cada bloco fora da
+  tela, mas os botoes continuam no DOM — buscaveis pelo Ctrl+F, alcancaveis
+  por Tab e roláveis por scrollIntoView.
+
+  `contain-intrinsic-size` e obrigatorio junto: sem ele o bloco nao pintado
+  teria altura zero e a barra de rolagem saltaria a cada bloco que entrasse
+  em cena. O valor e a altura aproximada de 100 celulas na grade.
+*/
+.grid-block {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 480px;
+}
+
+.grid-block__title {
+  margin-bottom: var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+  A grade se adapta sozinha: `auto-fill` com minimo de 48px da 5 colunas num
+  telefone de 320px e 16+ num monitor largo, sem uma media query por faixa.
+  48px tambem mantem o alvo de toque acima do minimo confortavel.
+*/
+.number-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: var(--space-2);
+}
+
+.number-slot {
+  display: block;
+  border-radius: var(--radius-sm);
+}
+
+/* Realce temporario do numero encontrado na busca. */
+.number-slot.is-highlighted {
+  outline: 3px solid var(--primary);
+  outline-offset: 3px;
+  animation: rifas-pulse 900ms var(--ease-in-out) 2;
+}
+
+.number-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  width: 100%;
+  min-height: 48px;
+  padding: var(--space-1);
+  border: 2px solid;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.number-cell__icon {
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.number-cell:not(:disabled):active {
+  transform: scale(0.94);
+}
+
+.number-cell.is-free {
+  background: var(--number-free-bg);
+  border-color: var(--number-free-border);
+  color: var(--number-free-text);
+}
+
+.number-cell.is-free:hover {
+  background: var(--number-free-hover-bg);
+  border-color: var(--number-free-hover-border);
+}
+
+.number-cell.is-selected {
+  background: var(--number-selected-bg);
+  border-color: var(--number-selected-border);
+  color: var(--number-selected-text);
+  box-shadow: var(--shadow-sm);
+}
+
+.number-cell.is-reserved {
+  background: var(--number-reserved-bg);
+  border-color: var(--number-reserved-border);
+  color: var(--number-reserved-text);
+  /* Borda tracejada: "temporario" legivel sem depender da cor amarela. */
+  border-style: dashed;
+}
+
+.number-cell.is-pending {
+  background: var(--number-pending-bg);
+  border-color: var(--number-pending-border);
+  color: var(--number-pending-text);
+  border-style: dashed;
+}
+
+.number-cell.is-paid {
+  background: var(--number-paid-bg);
+  border-color: var(--number-paid-border);
+  color: var(--number-paid-text);
+}
+
+.number-cell.is-captive {
+  background: var(--number-captive-bg);
+  border-color: var(--number-captive-border);
+  color: var(--number-captive-text);
+}
+
+/* Indisponivel nao fica apagado a ponto de sumir: a pessoa precisa LER que o
+   numero existe e esta tomado, e nao achar que a grade tem buracos. */
+.number-cell:disabled {
+  cursor: not-allowed;
+  opacity: 0.9;
+}
+
+/* --------------------------------------------------------------------------
+   BARRA DE SELECAO (celular)
+   -------------------------------------------------------------------------- */
+.selection-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--gutter);
+  padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+  background: var(--surface-elevated);
+  border-top: 1px solid var(--border);
+  box-shadow: var(--shadow-xl);
+  animation: rifas-slide-up var(--duration-base) var(--ease-out);
+}
+
+.selection-bar__summary {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  text-align: left;
+}
+
+.selection-bar__count {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
+.selection-bar__total {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-extrabold);
+  letter-spacing: var(--tracking-tight);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.selection-bar__cta {
+  flex-shrink: 0;
+}
+
+.selection-bar__totals {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+/* --------------------------------------------------------------------------
+   CRONOMETRO
+   -------------------------------------------------------------------------- */
+.timer {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--info-border);
+  border-radius: var(--radius-full);
+  background: var(--info-soft);
+  color: var(--info-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.timer__value {
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-extrabold);
+  letter-spacing: var(--tracking-snug);
+}
+
+.timer__label {
+  font-weight: var(--weight-medium);
+}
+
+.timer--urgent {
+  background: var(--warning-soft);
+  border-color: var(--warning-border);
+  color: var(--warning-text);
+}
+
+.timer--expired {
+  background: var(--danger-soft);
+  border-color: var(--danger-border);
+  color: var(--danger-text);
+}
+
+.timer--compact {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-xs);
+}
+
+/* --------------------------------------------------------------------------
+   CHECKOUT
+   -------------------------------------------------------------------------- */
+.checkout__header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.checkout__layout {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.checkout__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.checkout__note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.summary__title {
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+}
+
+.summary__draw {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.summary__numbers-label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  color: var(--text-muted);
+  margin-bottom: var(--space-3);
+}
+
+.summary__lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.summary__line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.summary__line dt {
+  color: var(--text-muted);
+}
+
+.summary__line dd {
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.summary__line--total {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.summary__line--total dt {
+  color: var(--text);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-md);
+}
+
+.summary__line--total dd {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-extrabold);
+  color: var(--primary-text);
+}
+
+/* --------------------------------------------------------------------------
+   COMPROVANTE
+   -------------------------------------------------------------------------- */
+.receipt-page {
+  max-width: 680px;
+  margin-inline: auto;
+}
+
+.receipt {
+  padding: var(--space-6) var(--space-5);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+}
+
+.receipt__head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  text-align: center;
+  padding-bottom: var(--space-6);
+  /* Recorte tracejado: a linguagem visual de comprovante destacavel. */
+  border-bottom: 2px dashed var(--border);
+}
+
+.receipt__icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-full);
+}
+
+.receipt--paid .receipt__icon {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.receipt--pending .receipt__icon {
+  background: var(--warning-soft);
+  color: var(--warning-text);
+}
+
+.receipt--cancelled .receipt__icon {
+  background: var(--danger-soft);
+  color: var(--danger-text);
+}
+
+.receipt__title {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-extrabold);
+  letter-spacing: var(--tracking-tight);
+}
+
+.receipt__text {
+  color: var(--text-muted);
+  max-width: 44ch;
+}
+
+.receipt__numbers {
+  padding-block: var(--space-6);
+  text-align: center;
+}
+
+.receipt__numbers-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  color: var(--text-muted);
+  margin-bottom: var(--space-4);
+}
+
+.receipt__number-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+/* Os numeros sao a razao de a pessoa guardar este comprovante. */
+.receipt__number {
+  min-width: 56px;
+  padding: var(--space-2) var(--space-3);
+  border: 2px solid var(--primary-border);
+  border-radius: var(--radius-md);
+  background: var(--primary-soft);
+  color: var(--primary-text);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-extrabold);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--tracking-snug);
+}
+
+.receipt__details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.receipt__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  font-size: var(--text-sm);
+}
+
+.receipt__row dt {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.receipt__row dd {
+  font-weight: var(--weight-semibold);
+  text-align: right;
+}
+
+.receipt__row--total {
+  padding-top: var(--space-3);
+  margin-top: var(--space-2);
+  border-top: 1px solid var(--border);
+}
+
+.receipt__row--total dt {
+  color: var(--text);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-md);
+}
+
+.receipt__row--total dd {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-extrabold);
+  color: var(--text);
+}
+
+.receipt__code {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px dashed var(--border);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-align: center;
+  word-break: break-all;
+}
+
+/* Referencia curta do comprovante. Monoespacada porque o que se faz com ela e
+   comparar caractere a caractere com outra lista. */
+.receipt__reference {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text);
+  letter-spacing: var(--tracking-wide);
+}
+
+.receipt__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: center;
+  margin-top: var(--space-6);
+}
+
+/* Caixa de desenvolvimento. Visualmente MARCADA como fora do produto, para
+   que ninguem a confunda com uma funcionalidade real numa captura de tela. */
+.dev-box {
+  margin-top: var(--space-6);
+  padding: var(--space-4);
+  border: 1px dashed var(--warning-border);
+  border-radius: var(--radius-md);
+  background: var(--warning-soft);
+}
+
+.dev-box__label {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  color: var(--warning-text);
+  margin-bottom: var(--space-2);
+}
+
+.dev-box__text {
+  font-size: var(--text-xs);
+  color: var(--warning-text);
+  margin-bottom: var(--space-3);
+  line-height: var(--leading-normal);
+}
+
+/* --------------------------------------------------------------------------
+   MINHA CONTA
+   -------------------------------------------------------------------------- */
+.account__card {
+  max-width: 440px;
+  margin-inline: auto;
+  margin-top: var(--space-6);
+}
+
+.account__title {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-extrabold);
+  letter-spacing: var(--tracking-tight);
+}
+
+.account__icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--primary-soft);
+  color: var(--primary-text);
+}
+
+.account__profile {
+  margin-block: var(--space-5);
+}
+
+.account__avatar {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--brand-400), var(--brand-600));
+  color: #fff;
+  font-weight: var(--weight-bold);
+}
+
+.account__name {
+  font-weight: var(--weight-bold);
+}
+
+.account__code {
+  text-align: center;
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.35em;
+  font-variant-numeric: tabular-nums;
+}
+
+.account__note {
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+}
+
+/* ==========================================================================
+   RESPONSIVO — a partir daqui so se ACRESCENTA largura
+   ========================================================================== */
+
+/* Telefone grande / phablet */
+@media (min-width: 420px) {
+  .hero__actions {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .hero__cta {
+    width: auto;
+  }
+
+  .trust {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+  }
+}
+
+/* Tablet */
+@media (min-width: 768px) {
+  :root {
+    --gutter: var(--space-6);
+  }
+
+  .page {
+    padding-block: var(--space-8) var(--space-10);
+  }
+
+  .site-header__signin {
+    display: inline-flex;
+  }
+
+  .site-header__account-name {
+    display: inline;
+  }
+
+  .grid-panel {
+    padding: var(--space-6);
+  }
+
+  .grid-panel__head {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  .grid-tools {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .grid-tools__search {
+    max-width: 320px;
+    flex: 1;
+  }
+
+  .checkout__header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .checkout__layout {
+    grid-template-columns: minmax(0, 1fr) 320px;
+    align-items: start;
+  }
+
+  .checkout__aside {
+    position: sticky;
+    top: calc(var(--header-height) + var(--space-5));
+  }
+
+  .receipt {
+    padding: var(--space-8) var(--space-7);
+  }
+
+  .site-footer__inner {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .site-footer__legal {
+    width: 100%;
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border-subtle);
+  }
+}
+
+/* Desktop: aparece a navegacao horizontal e somem os controles de gaveta. */
+@media (min-width: 960px) {
+  .site-header__nav {
+    display: flex;
+  }
+
+  .site-header__toggle {
+    display: none;
+  }
+
+  .hero {
+    grid-template-columns: 1.1fr 1fr;
+    align-items: center;
+    gap: var(--space-8);
+    padding-block: var(--space-8) var(--space-10);
+  }
+
+  .hero__title {
+    font-size: var(--text-4xl);
+  }
+
+  .draw-layout {
+    grid-template-columns: minmax(0, 1fr) 340px;
+    align-items: start;
+    gap: var(--space-8);
+  }
+
+  .draw-layout__aside {
+    position: sticky;
+    top: calc(var(--header-height) + var(--space-5));
+  }
+
+  .draw-page__title {
+    font-size: var(--text-3xl);
+  }
+
+  /* A barra fixa do rodape existe para o celular. No desktop o painel lateral
+     grudado ja mostra total e acao — duas barras competindo seria ruido. */
+  .selection-bar {
+    display: none;
+  }
+
+  .site__main {
+    padding-bottom: 0;
+  }
+
+  .number-grid {
+    grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .draw-layout {
+    grid-template-columns: minmax(0, 1fr) 380px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   IMPRESSAO — o comprovante e feito para ser guardado
+   -------------------------------------------------------------------------- */
+@media print {
+  .site-header,
+  .site-footer,
+  .selection-bar,
+  .back-link,
+  .receipt__actions,
+  .receipt__code-hint,
+  .dev-box,
+  .skip-link {
+    display: none !important;
+  }
+
+  .receipt {
+    border: 1px solid #000;
+    box-shadow: none;
+  }
+
+  .site__main {
+    padding: 0;
+  }
+}
