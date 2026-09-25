@@ -10,6 +10,7 @@ import { DrawPage } from './pages/DrawPage.tsx';
 import { CheckoutPage } from './pages/CheckoutPage.tsx';
 import { OrderPage } from './pages/OrderPage.tsx';
 import { AccountPage } from './pages/AccountPage.tsx';
+import { RegisterPage } from './pages/RegisterPage.tsx';
 
 /**
  * Vitrine da comunidade.
@@ -81,6 +82,7 @@ function Shell() {
           <Route path="/sorteio/:slug/checkout" element={<CheckoutPage />} />
           <Route path="/pedido/:id" element={<OrderPage />} />
           <Route path="/conta" element={<AccountPage />} />
+          <Route path="/cadastro" element={<RegisterPage />} />
           <Route
             path="*"
             element={

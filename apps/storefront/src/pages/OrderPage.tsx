@@ -5,6 +5,7 @@ import {
   formatCents,
   formatDateTime,
   formatNumberLabel,
+  shortOrderReference,
   type OrderResponse,
 } from '@campaigns/shared';
 import { ReservationTimer } from '../components/ReservationTimer.tsx';
@@ -119,26 +120,8 @@ export function OrderPage() {
   const criadoEm = formatDateTime(order.createdAt);
   const pagoEm = formatDateTime(order.paidAt);
 
-  /**
-   * Referencia curta, SO PARA LEITURA HUMANA.
-   *
-   * O UUID inteiro nao serve de referencia: ninguem dita "9eba7453-1be0-4ba5"
-   * por telefone nem confere isso numa lista. Mas esconde-lo por completo
-   * custou caro na impressao — `@media print` remove cabecalho, rodape e
-   * acoes, e o comprovante impresso ficava SEM identificador nenhum. Quem
-   * imprime e depois precisa casar o papel com o registro da organizacao nao
-   * tem por onde comecar.
-   *
-   * Os ultimos seis digitos do UUID resolvem os dois lados: curto o bastante
-   * para ler em voz alta, e derivado do identificador real, entao nao ha campo
-   * novo, contrato novo nem schema novo.
-   *
-   * NAO e chave de negocio. A busca continua sendo pelo `orderId` completo na
-   * URL, que e o que a API recebe; este codigo nunca e enviado a lugar nenhum
-   * e nao precisa ser unico globalmente — serve para conferir, nao para
-   * localizar.
-   */
-  const referenciaCurta = order.orderId.replace(/-/g, '').slice(-6).toUpperCase();
+  // Referencia curta para leitura humana; a regra mora em @campaigns/shared.
+  const referenciaCurta = shortOrderReference(order.orderId);
 
   return (
     <div className="container page receipt-page">

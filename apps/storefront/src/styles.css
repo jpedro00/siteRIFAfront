@@ -1832,3 +1832,97 @@
     padding: 0;
   }
 }
+
+/* --------------------------------------------------------------------------
+   MINHAS PARTICIPACOES
+   --------------------------------------------------------------------------
+   A lista chega plana e em ordem cronologica — e assim que ela pagina. Quem
+   participa de varias comunidades le melhor separado por comunidade, e e essa
+   separacao que a hierarquia abaixo torna visivel: o nome da comunidade e uma
+   faixa, nao mais um cartao competindo com os pedidos dentro dele.
+   -------------------------------------------------------------------------- */
+.account__section-title {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+  margin-top: var(--space-7);
+}
+
+.account-group + .account-group {
+  margin-top: var(--space-6);
+}
+
+.account-group__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+  margin-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.account-group__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.account-order__head {
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.account-order__draw {
+  font-weight: var(--weight-semibold);
+}
+
+/* Monoespacada: o que se faz com a referencia e comparar caractere a
+   caractere com outra lista. */
+.account-order__ref {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.account-order__foot {
+  align-items: baseline;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+/* No celular o cabecalho do pedido empilha: titulo e pilula de status lado a
+   lado espremem os dois. */
+@media (max-width: 519px) {
+  .account-order__head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* O cartao de perfil punha avatar, nome, e-mail e "Sair" numa linha so. Com um
+   e-mail longo — que e o caso comum — o botao saia da tela em 390 px, e a
+   pagina ganhava rolagem horizontal. O e-mail cede primeiro (truncando), e
+   abaixo de 520 px a linha vira coluna, com o botao alinhado a esquerda. */
+.account__profile .row--between {
+  gap: var(--space-3);
+}
+
+.account__profile .account__name,
+.account__profile .muted {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 519px) {
+  .account__profile .row--between {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .account__profile .btn {
+    align-self: flex-start;
+  }
+}

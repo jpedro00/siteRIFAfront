@@ -188,6 +188,7 @@ function TenantsSkeleton() {
 function CreateTenantForm({ onCreated }: { onCreated: () => void }) {
   const [slug, setSlug] = useState('');
   const [name, setName] = useState('');
+  const [ownerEmail, setOwnerEmail] = useState('');
   const [error, setError] = useState<unknown>(null);
   const [submitting, setSubmitting] = useState(false);
   const [created, setCreated] = useState<string | null>(null);
@@ -198,10 +199,11 @@ function CreateTenantForm({ onCreated }: { onCreated: () => void }) {
     setError(null);
     setCreated(null);
     try {
-      const result = await api.call('platformCreateTenant', { slug, name });
+      const result = await api.call('platformCreateTenant', { slug, name, ownerEmail });
       setCreated(result.slug);
       setSlug('');
       setName('');
+      setOwnerEmail('');
       onCreated();
     } catch (caught) {
       setError(caught);
@@ -279,6 +281,37 @@ function CreateTenantForm({ onCreated }: { onCreated: () => void }) {
                 <p className="field__hint" id="dica-slug">
                   Somente letras minúsculas, números e hífen. Vira{' '}
                   <code>{slug || '{identificador}'}.plataforma.com.br</code>.
+                </p>
+              </div>
+
+              {/* DONO, obrigatorio.
+
+                  Uma comunidade sem dono e uma comunidade que ninguem opera —
+                  criada aqui e entregue a ninguem. O vinculo nasce na mesma
+                  transacao da criacao: se este e-mail nao corresponder a uma
+                  conta, nada e criado.
+
+                  Conta EXISTENTE, e nao convite: convidar exige envio, token,
+                  expiracao e tela de aceite. A pessoa se cadastra na vitrine e
+                  o e-mail dela entra aqui. */}
+              <div className="field">
+                <label className="field__label" htmlFor="ownerEmail">
+                  E-mail do dono <span className="field__required" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="ownerEmail"
+                  className="field__input"
+                  type="email"
+                  autoComplete="off"
+                  required
+                  maxLength={320}
+                  aria-describedby="dica-owner"
+                  value={ownerEmail}
+                  onChange={(event) => setOwnerEmail(event.target.value)}
+                />
+                <p className="field__hint" id="dica-owner">
+                  Precisa ser uma conta que já existe. Ela recebe o papel de dono desta
+                  comunidade — e de nenhuma outra.
                 </p>
               </div>
             </div>

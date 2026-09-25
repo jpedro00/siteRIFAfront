@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { AlertCircle, LogOut, ShieldCheck } from 'lucide-react';
 import { initialsOf } from '@campaigns/shared';
 import { useStorefront } from '../state/SessionProvider.tsx';
 import { Loading, mensagemPara } from '../components/States.tsx';
+import { AccountOrders } from '../components/AccountOrders.tsx';
 
 /**
  * Minha conta.
@@ -11,10 +13,13 @@ import { Loading, mensagemPara } from '../components/States.tsx';
  * fixo, token permanente nem estado do navegador fazendo as vezes de
  * autenticacao: o cookie de sessao e httpOnly e o servidor decide.
  *
- * O historico de compras ainda nao existe — nao ha vinculo entre comprador e
- * conta nesta fatia, so entre comprador e pedido. A tela diz isso em
- * linguagem de produto ("o comprovante e o seu registro") em vez de anunciar
- * uma fase de desenvolvimento, que nao significa nada para quem comprou.
+ * As participacoes vem de `GET /api/account/orders`, que decide o dono pela
+ * SESSAO. Esta tela nao envia e-mail, telefone nem id para pedir os pedidos —
+ * nao existe parametro de identidade a falsificar.
+ *
+ * Compra feita SEM conta continua sendo guest e nao aparece aqui, mesmo que o
+ * e-mail informado no checkout seja o mesmo da conta. Casar por e-mail
+ * entregaria o pedido a quem apenas registrou o mesmo endereco.
  */
 export function AccountPage() {
   const { sessionStatus, session, login, verifyMfa, logout } = useStorefront();
@@ -151,9 +156,10 @@ export function AccountPage() {
           </div>
         </div>
 
-        <p className="muted account__note">
-          Para consultar um pedido, guarde o endereço do comprovante recebido ao finalizar.
-        </p>
+        <section className="stack">
+          <h2 className="account__section-title">Minhas participações</h2>
+          <AccountOrders />
+        </section>
       </div>
     );
   }
@@ -165,7 +171,7 @@ export function AccountPage() {
         <div className="card__body stack">
           <div>
             <h1 className="account__title">Entrar</h1>
-            <p className="muted">Entre para ver seu perfil nesta comunidade.</p>
+            <p className="muted">Entre para ver seu perfil e suas participações.</p>
           </div>
 
           {error != null && (
@@ -211,6 +217,10 @@ export function AccountPage() {
               {submitting ? 'Entrando…' : 'Entrar'}
             </button>
           </form>
+
+          <p className="muted account__note">
+            Ainda não possui uma conta? <Link to="/cadastro">Criar conta</Link>
+          </p>
 
           <p className="muted account__note">
             Para participar de um sorteio você não precisa de conta: seus dados são pedidos na

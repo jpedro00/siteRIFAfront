@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, SearchX } from 'lucide-react';
-import { ApiClientError } from '@campaigns/shared';
+import { API_ERROR_MESSAGES, ApiClientError } from '@campaigns/shared';
 
 /**
  * Estados de tela da vitrine.
@@ -93,6 +93,19 @@ export function ErrorState({
  * generica e honesta ("tente de novo em instantes") serve melhor do que uma
  * precisa e incompreensivel.
  */
+/**
+ * Mensagem que o SERVIDOR escreveu, quando houver uma util.
+ *
+ * A API manda uma frase pronta para quem le; o cliente so a descarta quando
+ * ela e o rotulo generico do codigo, que nao diz mais do que o mapa local.
+ */
+function mensagemDoServidor(error: ApiClientError): string | null {
+  const texto = error.message?.trim();
+  if (!texto) return null;
+  if (texto === API_ERROR_MESSAGES[error.code]) return null;
+  return texto;
+}
+
 export function mensagemPara(error: unknown): string {
   if (error instanceof ApiClientError) {
     switch (error.code) {
@@ -101,8 +114,22 @@ export function mensagemPara(error: unknown): string {
         return 'Não foi possível carregar esta comunidade. Confira o endereço que você acessou.';
       case 'NOT_FOUND':
         return 'Não encontramos o que você procura. O conteúdo pode ter sido removido.';
+      /**
+       * CONFLITO quer dizer coisas diferentes conforme a tela: na grade, que
+       * alguem pegou o numero primeiro; no cadastro, que o e-mail ja existe.
+       * Esta funcao devolvia o texto da grade em todo lugar, e o cadastro
+       * respondia "alguns números que você escolheu..." a quem nunca escolheu
+       * numero nenhum.
+       *
+       * O servidor JA sabe o que conflitou e manda a frase certa. Quando ela
+       * vem, ela vale; o texto abaixo fica para o caso — hoje o unico — em que
+       * a resposta nao traz mensagem propria.
+       */
       case 'CONFLICT':
-        return 'Alguns números que você escolheu acabaram de ser reservados por outra pessoa. Escolha outros para continuar.';
+        return (
+          mensagemDoServidor(error) ??
+          'Alguns números que você escolheu acabaram de ser reservados por outra pessoa. Escolha outros para continuar.'
+        );
       case 'UNAUTHENTICATED':
         return 'Sua sessão expirou. Entre novamente para continuar.';
       case 'FORBIDDEN':
