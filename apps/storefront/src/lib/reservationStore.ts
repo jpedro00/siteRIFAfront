@@ -20,7 +20,15 @@ import type { ReservationResponse } from '@clubedarifa/shared';
  * continua funcionando pelo `state` do roteador.
  */
 
-const CHAVE = 'rifas:reserva';
+const CHAVE = 'clubedarifa:reserva';
+
+/**
+ * Chave anterior a marca "Clube da Rifa". Uma reserva guardada antes do deploy
+ * ainda vale no servidor; ler a chave antiga como plano B evita "reserva nao
+ * encontrada" para quem estava no meio do checkout. So se le dela: toda
+ * gravacao vai para a chave nova, e a antiga some assim que for migrada.
+ */
+const CHAVE_ANTIGA = 'rifas:reserva';
 
 export interface ReservaGuardada {
   readonly reservation: ReservationResponse;
@@ -32,6 +40,7 @@ export interface ReservaGuardada {
 export function saveReservation(dados: ReservaGuardada): void {
   try {
     window.sessionStorage.setItem(CHAVE, JSON.stringify(dados));
+    window.sessionStorage.removeItem(CHAVE_ANTIGA);
   } catch {
     /* sem armazenamento; o fluxo sem recarregar continua valendo */
   }
@@ -39,7 +48,7 @@ export function saveReservation(dados: ReservaGuardada): void {
 
 export function loadReservation(reservationId?: string): ReservaGuardada | null {
   try {
-    const bruto = window.sessionStorage.getItem(CHAVE);
+    const bruto = lerMigrando();
     if (!bruto) return null;
 
     const dados = JSON.parse(bruto) as ReservaGuardada;
@@ -62,9 +71,23 @@ export function loadReservation(reservationId?: string): ReservaGuardada | null 
   }
 }
 
+/** Le a chave nova; se vazia, migra a antiga (grava na nova e remove a antiga). */
+function lerMigrando(): string | null {
+  const atual = window.sessionStorage.getItem(CHAVE);
+  if (atual) return atual;
+
+  const antigo = window.sessionStorage.getItem(CHAVE_ANTIGA);
+  if (!antigo) return null;
+
+  window.sessionStorage.setItem(CHAVE, antigo);
+  window.sessionStorage.removeItem(CHAVE_ANTIGA);
+  return antigo;
+}
+
 export function clearReservation(): void {
   try {
     window.sessionStorage.removeItem(CHAVE);
+    window.sessionStorage.removeItem(CHAVE_ANTIGA);
   } catch {
     /* nada a fazer */
   }
