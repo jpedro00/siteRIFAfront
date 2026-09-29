@@ -7,10 +7,13 @@
     "declarationMap": false,
     "sourceMap": false,
     "lib": ["ES2022", "DOM"],
-    "types": ["node"],
+    "jsx": "react-jsx",
+    "types": ["node", "@testing-library/jest-dom"],
     "allowImportingTsExtensions": true
   },
   "include": [
-    "packages/shared/tests/**/*.ts"
+    "vitest.setup.ts",
+    "packages/shared/tests/**/*.ts",
+    "apps/*/tests/**/*.{ts,tsx}"
   ]
 }

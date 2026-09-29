@@ -1,15 +1,18 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Gift, Info, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, CalendarDays, FileText, Gift, Info, ShieldCheck, Trophy, WifiOff } from 'lucide-react';
 import {
   ApiClientError,
+  RESERVATION_TTL_MINUTES,
   formatCents,
+  formatDateTime,
   formatInteger,
   formatNumberLabel,
   labelDigitsForGridSize,
   type PublicDrawDetail,
 } from '@clubedarifa/shared';
-import { PrizeImage } from '../components/PrizeImage.tsx';
+import { PrizeGallery } from '../components/PrizeGallery.tsx';
+import { SalesHint } from '../components/SalesHint.tsx';
 import { PromoNote } from '../components/PromoNote.tsx';
 import { ProgressBar } from '../components/ProgressBar.tsx';
 import { DrawStats } from '../components/DrawStats.tsx';
@@ -19,6 +22,8 @@ import { StatusBadge, isBuyable, statusMessage } from '../components/StatusBadge
 import { ErrorState, NotFoundState, mensagemPara } from '../components/States.tsx';
 import { DetailSkeleton, NumberGridSkeleton } from '../components/Skeletons.tsx';
 import { useApiResource } from '../hooks/useApiResource.ts';
+import { useApiPolling } from '../hooks/useApiPolling.ts';
+import { useDocumentMeta } from '../hooks/useDocumentMeta.ts';
 import { saveReservation } from '../lib/reservationStore.ts';
 import { api } from '../api.ts';
 import type { CellState } from '../components/NumberCell.tsx';
@@ -44,6 +49,9 @@ import type { CellState } from '../components/NumberCell.tsx';
  */
 const MAX_SELECAO = 100;
 
+/** Intervalo do polling da grade (a decisao ATUALIZACAO_GRADE: polling de 3 s com ETag). */
+const INTERVALO_GRADE_MS = 3_000;
+
 export function DrawPage() {
   const { slug = '' } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -51,6 +59,7 @@ export function DrawPage() {
   const [selecionados, setSelecionados] = useState<Set<number>>(() => new Set());
   const [reservando, setReservando] = useState(false);
   const [erroReserva, setErroReserva] = useState<string | null>(null);
+  const [avisoPerda, setAvisoPerda] = useState<string | null>(null);
 
   const sorteio = useApiResource<PublicDrawDetail>(
     (signal) => api.call('publicDraw', undefined, { params: { slug }, signal }),
@@ -59,12 +68,26 @@ export function DrawPage() {
 
   const drawId = sorteio.data?.id ?? null;
 
-  const numeros = useApiResource(
+  useDocumentMeta({
+    title: sorteio.data ? `${sorteio.data.prizeName} · ${sorteio.data.title}` : 'Sorteio',
+    description: sorteio.data?.description ?? null,
+    image: sorteio.data?.prizes[0]?.imageUrl ?? sorteio.data?.prizeImageUrl ?? null,
+  });
+
+  // A grade acompanha as OUTRAS pessoas: consulta a cada 3 s, revalidando com o ETag da
+  // API (nada mudou = 304, sem corpo). So re-renderiza quando o conteudo muda; a aba
+  // escondida pausa; falha de rede mantem a ultima grade e mostra o aviso "sem conexao".
+  const numeros = useApiPolling(
     (signal) =>
       drawId
-        ? api.call('publicDrawNumbers', undefined, { params: { id: drawId }, signal })
+        ? api.call('publicDrawNumbers', undefined, {
+            params: { id: drawId },
+            signal,
+            revalidate: true,
+          })
         : Promise.resolve(null),
     [drawId],
+    { intervalMs: INTERVALO_GRADE_MS, enabled: drawId !== null },
   );
 
   const ocupados = useMemo(() => {
@@ -75,9 +98,39 @@ export function DrawPage() {
     return mapa;
   }, [numeros.data]);
 
+  /**
+   * Numero que eu escolhi e OUTRA pessoa pegou enquanto eu olhava a grade: sai da minha
+   * selecao e a pessoa e AVISADA, com o rotulo do numero. Deixar o numero selecionado ate
+   * o servidor recusar a reserva descobriria o problema no pior momento — depois do
+   * clique em "Reservar".
+   */
+  const selecionadosRef = useRef(selecionados);
+  selecionadosRef.current = selecionados;
+  const digitosRef = useRef<2 | 3>(2);
+  digitosRef.current = sorteio.data ? labelDigitsForGridSize(sorteio.data.totalNumbers) : 2;
+
+  useEffect(() => {
+    if (ocupados.size === 0) return;
+    const perdidos = [...selecionadosRef.current].filter((n) => ocupados.has(n));
+    if (perdidos.length === 0) return;
+
+    setSelecionados((anterior) => {
+      const proximo = new Set(anterior);
+      for (const n of perdidos) proximo.delete(n);
+      return proximo;
+    });
+    const rotulos = perdidos.map((n) => formatNumberLabel(n, digitosRef.current)).join(', ');
+    setAvisoPerda(
+      perdidos.length === 1
+        ? `O número ${rotulos} acabou de ser reservado por outra pessoa e saiu da sua seleção.`
+        : `Os números ${rotulos} acabaram de ser reservados por outras pessoas e saíram da sua seleção.`,
+    );
+  }, [ocupados]);
+
   const alternar = useCallback(
     (valor: number) => {
       setErroReserva(null);
+      setAvisoPerda(null);
       setSelecionados((anterior) => {
         const proximo = new Set(anterior);
         if (proximo.has(valor)) {
@@ -206,6 +259,7 @@ export function DrawPage() {
 
   const draw = sorteio.data!;
   const vendendo = isBuyable(draw.status);
+  const comResultado = draw.status === 'RESULTADO PUBLICADO';
   const digitos = labelDigitsForGridSize(draw.totalNumbers);
   const disponiveis = Math.max(0, draw.totalNumbers - draw.takenCount);
   const totalSelecionado = ordenados.length * draw.unitPriceCents;
@@ -221,7 +275,7 @@ export function DrawPage() {
       <div className="draw-layout">
         {/* ----------------------------------------------------------- */}
         <div className="draw-layout__main stack stack--lg">
-          <PrizeImage url={draw.prizeImageUrl} alt={draw.prizeName} priority />
+          <PrizeGallery prizes={draw.prizes} fallbackName={draw.prizeName} />
 
           <header className="stack stack--sm">
             <div className="row row--wrap">
@@ -231,14 +285,50 @@ export function DrawPage() {
             <p className="draw-page__subtitle">{draw.title}</p>
           </header>
 
-          {draw.description && (
-            <section className="prose" aria-labelledby="sobre-sorteio">
-              <h2 id="sobre-sorteio" className="prose__title">
-                Sobre este sorteio
-              </h2>
-              <p>{draw.description}</p>
-            </section>
+          {comResultado && (
+            <Link className="alert alert--success result-banner" to={`/sorteio/${draw.slug}/resultado`}>
+              <Trophy className="alert__icon" size={18} aria-hidden="true" />
+              <span className="alert__body">
+                <strong>O resultado foi publicado.</strong> Veja o número contemplado e como ele foi
+                apurado.
+              </span>
+            </Link>
           )}
+
+          {/* RN29: regulamento, preco total e prazo da reserva ficam SEMPRE visiveis. A
+              descricao do sorteio e o regulamento ate existir campo proprio (S-REG1). */}
+          <section className="prose" aria-labelledby="regulamento" id="regulamento">
+            <h2 id="regulamento-titulo" className="prose__title">
+              <FileText size={18} aria-hidden="true" />
+              Regulamento
+            </h2>
+            {draw.description ? (
+              <p className="prose__pre">{draw.description}</p>
+            ) : (
+              <p className="muted">A organização ainda não publicou o texto do regulamento.</p>
+            )}
+            <ul className="rules rules--dates">
+              {draw.salesStartAt && (
+                <li>
+                  <CalendarDays size={14} aria-hidden="true" /> Vendas a partir de{' '}
+                  <strong>{formatDateTime(draw.salesStartAt)}</strong>
+                </li>
+              )}
+              {draw.closeAt && (
+                <li>
+                  <CalendarDays size={14} aria-hidden="true" /> Vendas encerram em{' '}
+                  <strong>{formatDateTime(draw.closeAt)}</strong>
+                  {draw.closeMode === 'O_QUE_VIER_PRIMEIRO' ? ' (ou antes, se esgotar)' : ''}
+                </li>
+              )}
+              {draw.drawDate && (
+                <li>
+                  <CalendarDays size={14} aria-hidden="true" /> Apuração pela Loteria Federal em{' '}
+                  <strong>{formatDateTime(draw.drawDate)}</strong>
+                </li>
+              )}
+            </ul>
+          </section>
 
           {draw.prizeDescription && (
             <section className="prose" aria-labelledby="sobre-premio">
@@ -259,8 +349,8 @@ export function DrawPage() {
             </h2>
             <ul className="rules">
               <li>
-                Ao reservar, seus números ficam bloqueados por <strong>30 minutos</strong> para
-                você concluir a compra.
+                Ao reservar, seus números ficam bloqueados por{' '}
+                <strong>{RESERVATION_TTL_MINUTES} minutos</strong> para você concluir a compra.
               </li>
               <li>
                 Passado esse prazo sem pagamento, os números voltam a ficar disponíveis para
@@ -287,6 +377,11 @@ export function DrawPage() {
             </div>
 
             <ProgressBar paid={draw.paidCount} total={draw.totalNumbers} />
+            <SalesHint
+              total={draw.totalNumbers}
+              paid={draw.paidCount}
+              drawDate={draw.drawDate}
+            />
 
             <dl className="buy-panel__lines">
               <div className="buy-panel__line">
@@ -361,8 +456,9 @@ export function DrawPage() {
             </button>
 
             <p className="buy-panel__note">
-              A reserva vale por 30 minutos. Você ainda vai informar seus dados antes de
-              confirmar.
+              A reserva vale por {RESERVATION_TTL_MINUTES} minutos e você paga com PIX. Ao reservar
+              você concorda com o{' '}
+              <a href="#regulamento-titulo">regulamento</a>.
             </p>
           </div>
         </aside>
@@ -370,6 +466,20 @@ export function DrawPage() {
 
       {/* --------------------------------------------------------------- */}
       <div className="draw-page__grid">
+        {avisoPerda && (
+          <p className="alert alert--warning" role="alert">
+            <Info className="alert__icon" size={16} aria-hidden="true" />
+            <span className="alert__body">{avisoPerda}</span>
+          </p>
+        )}
+        {numeros.stale && (
+          <p className="alert alert--warning" role="status">
+            <WifiOff className="alert__icon" size={16} aria-hidden="true" />
+            <span className="alert__body">
+              Sem conexão. A grade pode estar desatualizada — tentando de novo.
+            </span>
+          </p>
+        )}
         {numeros.status === 'loading' && <NumberGridSkeleton />}
 
         {numeros.status === 'error' && (

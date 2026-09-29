@@ -9,6 +9,7 @@ import { DrawsPage } from './pages/DrawsPage.tsx';
 import { DrawPage } from './pages/DrawPage.tsx';
 import { CheckoutPage } from './pages/CheckoutPage.tsx';
 import { OrderPage } from './pages/OrderPage.tsx';
+import { ResultPage } from './pages/ResultPage.tsx';
 import { AccountPage } from './pages/AccountPage.tsx';
 import { RegisterPage } from './pages/RegisterPage.tsx';
 
@@ -80,6 +81,7 @@ function Shell() {
           <Route path="/sorteios" element={<DrawsPage />} />
           <Route path="/sorteio/:slug" element={<DrawPage />} />
           <Route path="/sorteio/:slug/checkout" element={<CheckoutPage />} />
+          <Route path="/sorteio/:slug/resultado" element={<ResultPage />} />
           <Route path="/pedido/:id" element={<OrderPage />} />
           <Route path="/conta" element={<AccountPage />} />
           <Route path="/cadastro" element={<RegisterPage />} />
