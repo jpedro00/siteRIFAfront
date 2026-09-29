@@ -1926,3 +1926,22 @@
     align-self: flex-start;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Promoção · selo com o preço cheio riscado e o prazo (RN15 · RN28)
+   --------------------------------------------------------------------------- */
+.promo-note {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.promo-note__was {
+  color: var(--text-muted);
+}
+
+.promo-note__until {
+  color: var(--text-muted);
+}

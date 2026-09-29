@@ -37,6 +37,7 @@ import { api } from '../api.ts';
 interface Erros {
   title?: string;
   prizeName?: string;
+  prizeImage?: string;
   unitPrice?: string;
   drawDate?: string;
 }
@@ -80,6 +81,10 @@ export function NewDrawPage() {
     if (premio.trim().length < 2) {
       encontrados.prizeName = 'Informe o nome do prêmio.';
     }
+    if (imagem.trim() !== '' && !imagem.trim().toLowerCase().startsWith('https://')) {
+      // O servidor so aceita https (Suposicao temporaria S-IMG1).
+      encontrados.prizeImage = 'O endereço da foto precisa começar com https://.';
+    }
     if (parsePriceToCents(preco) === null) {
       encontrados.unitPrice = 'Informe um valor maior que zero, como 15,00.';
     }
@@ -88,7 +93,7 @@ export function NewDrawPage() {
     }
 
     return encontrados;
-  }, [data, preco, premio, titulo]);
+  }, [data, imagem, preco, premio, titulo]);
 
   const enviar = useCallback(async () => {
     setJaEnviou(true);
@@ -106,12 +111,16 @@ export function NewDrawPage() {
     try {
       const corpo: CreateDrawRequest = {
         title: titulo.trim(),
-        prizeName: premio.trim(),
-        unitPriceCents: parsePriceToCents(preco)!,
+        prizes: [
+          {
+            name: premio.trim(),
+            ...(descricaoPremio.trim() === '' ? {} : { description: descricaoPremio.trim() }),
+            ...(imagem.trim() === '' ? {} : { imageUrl: imagem.trim() }),
+          },
+        ],
+        ticketPriceCents: parsePriceToCents(preco)!,
         totalNumbers: grade,
         ...(descricao.trim() === '' ? {} : { description: descricao.trim() }),
-        ...(descricaoPremio.trim() === '' ? {} : { prizeDescription: descricaoPremio.trim() }),
-        ...(imagem.trim() === '' ? {} : { prizeImageUrl: imagem.trim() }),
         // O input `datetime-local` nao traz fuso; `toISOString` resolve no
         // fuso do navegador, que e o de quem esta cadastrando.
         ...(data === '' ? {} : { drawDate: new Date(data).toISOString() }),
@@ -158,7 +167,7 @@ export function NewDrawPage() {
 
       <PageHeader
         title="Novo sorteio"
-        description="O sorteio é criado como rascunho. Ele só aparece na vitrine depois que você abrir as vendas."
+        description="O sorteio é criado como rascunho. Para vender, envie-o para revisão: ele aparece na vitrine depois de aprovado pela plataforma."
       />
 
       <form
@@ -260,24 +269,34 @@ export function NewDrawPage() {
               />
             </div>
 
-            <div className="field">
-              <label className="field__label" htmlFor="campo-prizeImageUrl">
+            <div className={`field${erros.prizeImage ? ' field--invalid' : ''}`}>
+              <label className="field__label" htmlFor="campo-prizeImage">
                 Endereço da foto <span className="muted">(opcional)</span>
               </label>
               <input
-                id="campo-prizeImageUrl"
+                id="campo-prizeImage"
                 className="field__input"
                 type="url"
                 inputMode="url"
                 placeholder="https://…"
                 maxLength={2000}
                 value={imagem}
+                aria-invalid={erros.prizeImage ? true : undefined}
+                aria-describedby={erros.prizeImage ? 'erro-prizeImage' : undefined}
                 onChange={(event) => setImagem(event.target.value)}
+                onBlur={revalidar}
               />
-              <p className="field__hint">
-                Sem foto, a vitrine mostra um espaço reservado — nenhuma imagem genérica é
-                usada no lugar do prêmio.
-              </p>
+              {erros.prizeImage ? (
+                <p className="field__error" id="erro-prizeImage">
+                  <AlertCircle size={14} aria-hidden="true" />
+                  {erros.prizeImage}
+                </p>
+              ) : (
+                <p className="field__hint">
+                  Sem foto, a vitrine mostra um espaço reservado — nenhuma imagem genérica é
+                  usada no lugar do prêmio. Só links https://.
+                </p>
+              )}
             </div>
           </div>
         </fieldset>

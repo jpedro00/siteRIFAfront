@@ -10,6 +10,7 @@ import {
   type PublicDrawDetail,
 } from '@clubedarifa/shared';
 import { PrizeImage } from '../components/PrizeImage.tsx';
+import { PromoNote } from '../components/PromoNote.tsx';
 import { ProgressBar } from '../components/ProgressBar.tsx';
 import { DrawStats } from '../components/DrawStats.tsx';
 import { NumberGrid } from '../components/NumberGrid.tsx';
@@ -282,6 +283,7 @@ export function DrawPage() {
             <div className="buy-panel__price">
               <span className="buy-panel__price-label">Cada número por</span>
               <strong className="buy-panel__price-value">{formatCents(draw.unitPriceCents)}</strong>
+              <PromoNote draw={draw} />
             </div>
 
             <ProgressBar paid={draw.paidCount} total={draw.totalNumbers} />
