@@ -1,11 +1,12 @@
 import { Link, Route, Routes } from 'react-router-dom';
-import { Building2 } from 'lucide-react';
+import { Building2, ClipboardCheck } from 'lucide-react';
 import { SessionProvider, useSession } from './state/SessionProvider.tsx';
 import { AuthGate } from './pages/AuthGate.tsx';
 import { AdminShell, type AdminNavItem } from './components/AdminShell.tsx';
 import { ScrollToTop } from './components/ScrollToTop.tsx';
 import { AccessDenied, NotFoundState } from './components/States.tsx';
 import { TenantsPage } from './pages/TenantsPage.tsx';
+import { ReviewQueuePage } from './pages/ReviewQueuePage.tsx';
 
 /**
  * Console Super Admin.
@@ -14,7 +15,7 @@ import { TenantsPage } from './pages/TenantsPage.tsx';
  * API. Um sub-perfil so ve as areas que o DOC-01 secao 17 lhe atribui —
  * nenhum sub-perfil recebe tudo.
  *
- * As areas ainda inexistentes (revisao, risco, cobrancas, saude) sairam do
+ * As areas ainda inexistentes (risco, cobrancas, saude) sairam do
  * menu. Elas nao tem rota no backend, e um item desabilitado com o nome de
  * uma fase futura nao ajuda quem opera: informa apenas que o console nao esta
  * pronto. Voltam ao menu quando tiverem o que mostrar.
@@ -25,6 +26,12 @@ const NAV: AdminNavItem[] = [
     label: 'Comunidades',
     icon: <Building2 size={17} aria-hidden="true" />,
     permission: 'platform:tenant:read',
+  },
+  {
+    to: '/revisao',
+    label: 'Fila de revisão',
+    icon: <ClipboardCheck size={17} aria-hidden="true" />,
+    permission: 'platform:review:read',
   },
 ];
 
@@ -44,6 +51,16 @@ function Shell() {
               <TenantsPage />
             ) : (
               <AccessDenied message="Seu perfil de Super Admin não inclui a leitura de comunidades." />
+            )
+          }
+        />
+        <Route
+          path="/revisao"
+          element={
+            can('platform:review:read') ? (
+              <ReviewQueuePage />
+            ) : (
+              <AccessDenied message="Seu perfil de Super Admin não inclui a revisão de sorteios." />
             )
           }
         />

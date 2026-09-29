@@ -8,6 +8,7 @@ import {
   Hash,
   Pause,
   Play,
+  Send,
   Square,
   Ticket,
   Timer,
@@ -19,9 +20,10 @@ import {
   formatDateTime,
   formatInteger,
   formatNumberLabel,
+  ORGANIZER_DRAW_TRANSITIONS,
   percentOf,
   storefrontDrawUrl,
-  type DrawStatusPhase2,
+  type DrawStatus,
   type OrganizerDraw,
 } from '@clubedarifa/shared';
 import { ErrorPanel, MetricCard, MetricsSkeleton, PageHeader, StatusBadge } from '../components/Ui.tsx';
@@ -34,42 +36,41 @@ import { api } from '../api.ts';
  *
  * TRANSICOES
  * ----------
- * Os botoes espelham a maquina de estados do servico — RASCUNHO abre;
- * ATIVA pausa ou encerra; PAUSADA reabre ou encerra; ENCERRADA nao volta. A
- * lista aqui evita oferecer um caminho que a API vai recusar, mas quem decide
- * continua sendo o backend: esconder botao nao e regra de negocio.
+ * Os botoes espelham `ORGANIZER_DRAW_TRANSITIONS`, do pacote compartilhado — a
+ * MESMA tabela que a API aplica. RASCUNHO nao "abre vendas": ele vai para
+ * revisao, e quem aprova e a plataforma (RN02). ATIVA pausa ou encerra; PAUSADA
+ * retoma ou encerra. A lista aqui evita oferecer um caminho que a API vai
+ * recusar, mas quem decide continua sendo o backend: esconder botao nao e regra
+ * de negocio.
  *
  * Encerrar vendas e IRREVERSIVEL, entao pede confirmacao. A confirmacao e um
  * painel na propria tela, nao `window.confirm` — o dialogo nativo nao recebe
  * estilo, nao explica a consequencia e trava a aba.
  */
-const ACOES: Record<
-  DrawStatusPhase2,
-  { status: 'ATIVA' | 'PAUSADA' | 'VENDAS ENCERRADAS'; rotulo: string; icone: typeof Play; variante: string }[]
+type StatusOrganizador = keyof typeof ORGANIZER_DRAW_TRANSITIONS;
+
+const ROTULOS_ACAO: Partial<
+  Record<DrawStatus, { rotulo: string; icone: typeof Play; variante: string }>
 > = {
-  RASCUNHO: [
-    { status: 'ATIVA', rotulo: 'Abrir vendas', icone: Play, variante: 'btn--primary' },
-  ],
-  ATIVA: [
-    { status: 'PAUSADA', rotulo: 'Pausar vendas', icone: Pause, variante: 'btn--secondary' },
-    {
-      status: 'VENDAS ENCERRADAS',
-      rotulo: 'Encerrar vendas',
-      icone: Square,
-      variante: 'btn--danger-ghost',
-    },
-  ],
-  PAUSADA: [
-    { status: 'ATIVA', rotulo: 'Retomar vendas', icone: Play, variante: 'btn--primary' },
-    {
-      status: 'VENDAS ENCERRADAS',
-      rotulo: 'Encerrar vendas',
-      icone: Square,
-      variante: 'btn--danger-ghost',
-    },
-  ],
-  'VENDAS ENCERRADAS': [],
+  'REVISÃO COMPLIANCE': { rotulo: 'Enviar para revisão', icone: Send, variante: 'btn--primary' },
+  ATIVA: { rotulo: 'Retomar vendas', icone: Play, variante: 'btn--primary' },
+  PAUSADA: { rotulo: 'Pausar vendas', icone: Pause, variante: 'btn--secondary' },
+  'VENDAS ENCERRADAS': { rotulo: 'Encerrar vendas', icone: Square, variante: 'btn--danger-ghost' },
 };
+
+/** Estados em que o sorteio ainda nao esta publicado na vitrine. */
+const SEM_VITRINE: readonly DrawStatus[] = ['RASCUNHO', 'REVISÃO COMPLIANCE', 'AGENDADA'];
+
+function acoesPara(de: DrawStatus) {
+  const destinos = ORGANIZER_DRAW_TRANSITIONS[de as StatusOrganizador] ?? [];
+  return destinos.flatMap((status) => {
+    const info = ROTULOS_ACAO[status];
+    if (!info) return [];
+    // ATIVA a partir de PAUSADA e "retomar"; nunca aparece a partir de RASCUNHO,
+    // porque a tabela compartilhada nao a oferece ali.
+    return [{ status, ...info }];
+  });
+}
 
 export function DrawDetailPage() {
   const { id = '' } = useParams<{ id: string }>();
@@ -93,7 +94,7 @@ export function DrawDetailPage() {
   );
 
   const mudarStatus = useCallback(
-    async (status: 'ATIVA' | 'PAUSADA' | 'VENDAS ENCERRADAS') => {
+    async (status: DrawStatus) => {
       setAlterando(true);
       setErroAcao(null);
       try {
@@ -131,7 +132,7 @@ export function DrawDetailPage() {
   const percentual = percentOf(draw.paidCount, draw.totalNumbers);
   const disponiveis = Math.max(0, draw.totalNumbers - draw.takenCount);
   const dataSorteio = formatDateTime(draw.drawDate);
-  const acoes = can('draw:lifecycle:write') ? ACOES[draw.status] : [];
+  const acoes = can('draw:lifecycle:write') ? acoesPara(draw.status) : [];
 
   // A base da vitrine e CONFIGURACAO, nao codigo: cada instalacao tem o
   // proprio dominio. A montagem e validacao moram em `@clubedarifa/shared` e
@@ -185,9 +186,9 @@ export function DrawDetailPage() {
               maquina de quem desenvolve e morreria no cliente, que e o pior
               jeito de falhar, porque passa pelo teste manual.
 
-              Rascunho tambem nao mostra: ele nao esta publicado.
+              Rascunho, revisao e agendada tambem nao mostram: nao estao publicados.
             */}
-            {draw.status !== 'RASCUNHO' && urlVitrine !== null && (
+            {!SEM_VITRINE.includes(draw.status) && urlVitrine !== null && (
               <a
                 className="btn btn--ghost"
                 href={urlVitrine}
@@ -232,6 +233,18 @@ export function DrawDetailPage() {
                 Cancelar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {draw.status === 'REVISÃO COMPLIANCE' && (
+        <div className="alert alert--warning" role="status">
+          <div className="alert__body stack stack--sm">
+            <p className="alert__title">Aguardando revisão da plataforma</p>
+            <p>
+              O sorteio foi enviado e não pode ser alterado até a decisão. Se for reprovado, ele
+              volta a rascunho para você corrigir e enviar de novo.
+            </p>
           </div>
         </div>
       )}
