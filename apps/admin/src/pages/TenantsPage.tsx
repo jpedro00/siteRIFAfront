@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { AlertCircle, Building2, CheckCircle2, Plus, RefreshCw, X } from 'lucide-react';
-import { ApiClientError, formatDate, type TenantListResponse } from '@campaigns/shared';
+import { ApiClientError, formatDate, type TenantListResponse } from '@clubedarifa/shared';
 import { api } from '../api.ts';
 import { useSession } from '../state/SessionProvider.tsx';
 import { ErrorState } from '../components/States.tsx';

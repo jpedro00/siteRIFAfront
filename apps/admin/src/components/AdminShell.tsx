@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { LogOut, Menu, Shield, X } from 'lucide-react';
-import { PLATFORM_ROLE_LABELS, initialsOf, type PlatformPermission } from '@campaigns/shared';
+import { PLATFORM_ROLE_LABELS, initialsOf, type PlatformPermission } from '@clubedarifa/shared';
 import { useSession } from '../state/SessionProvider.tsx';
 
 /**
@@ -67,7 +67,7 @@ export function AdminShell({
             <Shield size={18} />
           </span>
           <div>
-            <p className="sidebar__wordmark">RIFAS</p>
+            <p className="sidebar__wordmark">Clube da Rifa</p>
             <p className="sidebar__product">Console da plataforma</p>
           </div>
         </div>

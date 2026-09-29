@@ -1,5 +1,5 @@
 /* ==========================================================================
-   RIFAS · vitrine
+   Clube da Rifa · vitrine
    --------------------------------------------------------------------------
    Estilos proprios da experiencia publica. Tokens, base e primitivas vem do
    pacote compartilhado — nenhuma cor literal nasce aqui.
@@ -10,9 +10,9 @@
    fora da tela.
    ========================================================================== */
 
-@import '@campaigns/shared/styles/tokens.css';
-@import '@campaigns/shared/styles/base.css';
-@import '@campaigns/shared/styles/components.css';
+@import '@clubedarifa/shared/styles/tokens.css';
+@import '@clubedarifa/shared/styles/base.css';
+@import '@clubedarifa/shared/styles/components.css';
 
 /* --------------------------------------------------------------------------
    ESQUELETO DA PAGINA

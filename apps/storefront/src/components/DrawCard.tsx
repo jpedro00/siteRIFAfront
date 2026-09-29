@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import { formatCents, type PublicDrawSummary } from '@campaigns/shared';
+import { formatCents, type PublicDrawSummary } from '@clubedarifa/shared';
 import { PrizeImage } from './PrizeImage.tsx';
 import { ProgressBar } from './ProgressBar.tsx';
 import { StatusBadge } from './StatusBadge.tsx';

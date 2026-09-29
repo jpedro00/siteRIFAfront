@@ -1,4 +1,4 @@
-import type { ReservationResponse } from '@campaigns/shared';
+import type { ReservationResponse } from '@clubedarifa/shared';
 
 /**
  * Guarda a reserva em curso entre a grade e o checkout.

@@ -9,7 +9,7 @@ import {
   Timer,
   Users,
 } from 'lucide-react';
-import { formatCentsCompact, formatInteger } from '@campaigns/shared';
+import { formatCentsCompact, formatInteger } from '@clubedarifa/shared';
 import {
   EmptyState,
   ErrorPanel,

@@ -13,7 +13,7 @@ import {
   sessionNeed,
   type PublicTenantBranding,
   type SessionResponse,
-} from '@campaigns/shared';
+} from '@clubedarifa/shared';
 import { api } from '../api.ts';
 
 /**

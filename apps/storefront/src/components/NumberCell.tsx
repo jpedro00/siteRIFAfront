@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Check, Clock, Lock, ShoppingCart } from 'lucide-react';
-import { formatNumberLabel } from '@campaigns/shared';
+import { formatNumberLabel } from '@clubedarifa/shared';
 
 /**
  * Uma celula da grade.

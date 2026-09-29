@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronUp, ShoppingCart, X } from 'lucide-react';
-import { formatCents, formatNumberLabel } from '@campaigns/shared';
+import { formatCents, formatNumberLabel } from '@clubedarifa/shared';
 
 /**
  * Barra de selecao fixa no rodape (celular).

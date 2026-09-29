@@ -7,7 +7,7 @@ import {
   formatNumberLabel,
   shortOrderReference,
   type OrderResponse,
-} from '@campaigns/shared';
+} from '@clubedarifa/shared';
 import { ReservationTimer } from '../components/ReservationTimer.tsx';
 import { Loading, NotFoundState, mensagemPara } from '../components/States.tsx';
 import { useApiResource } from '../hooks/useApiResource.ts';
@@ -120,7 +120,7 @@ export function OrderPage() {
   const criadoEm = formatDateTime(order.createdAt);
   const pagoEm = formatDateTime(order.paidAt);
 
-  // Referencia curta para leitura humana; a regra mora em @campaigns/shared.
+  // Referencia curta para leitura humana; a regra mora em @clubedarifa/shared.
   const referenciaCurta = shortOrderReference(order.orderId);
 
   return (

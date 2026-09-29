@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, BadgeCheck, Lock, Timer } from 'lucide-react';
-import { formatCents, formatInteger, type PublicDrawSummary } from '@campaigns/shared';
+import { formatCents, formatInteger, type PublicDrawSummary } from '@clubedarifa/shared';
 import { PrizeImage } from './PrizeImage.tsx';
 import { ProgressBar } from './ProgressBar.tsx';
 import { StatusBadge, isBuyable } from './StatusBadge.tsx';

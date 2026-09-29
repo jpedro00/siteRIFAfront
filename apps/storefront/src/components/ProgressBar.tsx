@@ -1,4 +1,4 @@
-import { formatInteger, percentOf } from '@campaigns/shared';
+import { formatInteger, percentOf } from '@clubedarifa/shared';
 
 /**
  * Progresso de vendas.

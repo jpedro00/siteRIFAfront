@@ -23,7 +23,7 @@ import {
   storefrontDrawUrl,
   type DrawStatusPhase2,
   type OrganizerDraw,
-} from '@campaigns/shared';
+} from '@clubedarifa/shared';
 import { ErrorPanel, MetricCard, MetricsSkeleton, PageHeader, StatusBadge } from '../components/Ui.tsx';
 import { useApiResource } from '../hooks/useApiResource.ts';
 import { useSession } from '../state/SessionProvider.tsx';
@@ -134,7 +134,7 @@ export function DrawDetailPage() {
   const acoes = can('draw:lifecycle:write') ? ACOES[draw.status] : [];
 
   // A base da vitrine e CONFIGURACAO, nao codigo: cada instalacao tem o
-  // proprio dominio. A montagem e validacao moram em `@campaigns/shared` e
+  // proprio dominio. A montagem e validacao moram em `@clubedarifa/shared` e
   // tem teste proprio.
   const urlVitrine = storefrontDrawUrl(
     import.meta.env['VITE_STOREFRONT_BASE_URL'] as string | undefined,

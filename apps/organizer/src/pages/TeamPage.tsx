@@ -4,7 +4,7 @@ import {
   TENANT_ROLE_PERMISSIONS,
   type MembershipRole,
   type TenantPermission,
-} from '@campaigns/shared';
+} from '@clubedarifa/shared';
 import { useSession } from '../state/SessionProvider.tsx';
 
 /**

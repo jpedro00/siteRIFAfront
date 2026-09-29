@@ -1,5 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
-import { ApiClientError } from '@campaigns/shared';
+import { ApiClientError } from '@clubedarifa/shared';
 import { useSession } from '../state/SessionProvider.tsx';
 import { Loading } from '../components/States.tsx';
 

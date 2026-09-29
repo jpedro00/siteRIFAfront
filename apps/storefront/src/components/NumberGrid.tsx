@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Dices, Eraser, Search, X } from 'lucide-react';
-import { formatInteger, formatNumberLabel } from '@campaigns/shared';
+import { formatInteger, formatNumberLabel } from '@clubedarifa/shared';
 import { NumberCell, type CellState } from './NumberCell.tsx';
 import { NumberLegend } from './NumberLegend.tsx';
 

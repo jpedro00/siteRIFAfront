@@ -1,14 +1,14 @@
 /* ==========================================================================
-   RIFAS · painel do organizador
+   Clube da Rifa · painel do organizador
    --------------------------------------------------------------------------
    Tokens, base, primitivas e o casco do painel vem do pacote compartilhado.
    Aqui ficam apenas as pecas proprias desta aplicacao.
    ========================================================================== */
 
-@import '@campaigns/shared/styles/tokens.css';
-@import '@campaigns/shared/styles/base.css';
-@import '@campaigns/shared/styles/components.css';
-@import '@campaigns/shared/styles/dashboard.css';
+@import '@clubedarifa/shared/styles/tokens.css';
+@import '@clubedarifa/shared/styles/base.css';
+@import '@clubedarifa/shared/styles/components.css';
+@import '@clubedarifa/shared/styles/dashboard.css';
 
 /* --------------------------------------------------------------------------
    NAVEGACAO INTERNA

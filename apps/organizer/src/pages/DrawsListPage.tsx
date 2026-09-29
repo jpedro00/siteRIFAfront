@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Plus, Ticket } from 'lucide-react';
-import { formatCents, formatCentsCompact, formatDate, formatInteger, percentOf } from '@campaigns/shared';
+import { formatCents, formatCentsCompact, formatDate, formatInteger, percentOf } from '@clubedarifa/shared';
 import {
   EmptyState,
   ErrorPanel,

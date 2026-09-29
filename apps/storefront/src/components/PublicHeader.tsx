@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { LogIn, Menu, Ticket, User, X } from 'lucide-react';
-import { initialsOf } from '@campaigns/shared';
+import { initialsOf } from '@clubedarifa/shared';
 import { useStorefront } from '../state/SessionProvider.tsx';
 
 /**

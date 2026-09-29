@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AlarmClock } from 'lucide-react';
-import { formatCountdown } from '@campaigns/shared';
+import { formatCountdown } from '@clubedarifa/shared';
 
 /**
  * Contagem regressiva da reserva (RN05 · 30 minutos).

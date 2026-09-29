@@ -1,4 +1,4 @@
-import type { DrawStatusPhase2 } from '@campaigns/shared';
+import type { DrawStatusPhase2 } from '@clubedarifa/shared';
 
 /**
  * Selo de estado do sorteio.

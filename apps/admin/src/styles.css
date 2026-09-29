@@ -1,15 +1,15 @@
 /* ==========================================================================
-   RIFAS · console da plataforma
+   Clube da Rifa · console da plataforma
    --------------------------------------------------------------------------
    Compartilha o casco do painel do organizador. A identidade e distinguida
    pelo simbolo (escudo) e pelas etiquetas de sub-perfil — quem opera os dois
    produtos precisa saber num relance em qual esta.
    ========================================================================== */
 
-@import '@campaigns/shared/styles/tokens.css';
-@import '@campaigns/shared/styles/base.css';
-@import '@campaigns/shared/styles/components.css';
-@import '@campaigns/shared/styles/dashboard.css';
+@import '@clubedarifa/shared/styles/tokens.css';
+@import '@clubedarifa/shared/styles/base.css';
+@import '@clubedarifa/shared/styles/components.css';
+@import '@clubedarifa/shared/styles/dashboard.css';
 
 /* Simbolo do console: azul em vez do violeta da comunidade. Um administrador
    com as duas abas abertas nao pode confundir uma acao de plataforma com uma

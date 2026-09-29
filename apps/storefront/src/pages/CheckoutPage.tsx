@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AlertCircle, ArrowLeft, Lock } from 'lucide-react';
-import { formatPhoneBR, phoneDigits } from '@campaigns/shared';
+import { formatPhoneBR, phoneDigits } from '@clubedarifa/shared';
 import { CheckoutSummary } from '../components/CheckoutSummary.tsx';
 import { ReservationTimer } from '../components/ReservationTimer.tsx';
 import { NotFoundState, mensagemPara } from '../components/States.tsx';

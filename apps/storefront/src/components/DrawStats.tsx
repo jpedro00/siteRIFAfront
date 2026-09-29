@@ -1,5 +1,5 @@
 import { CalendarDays, Hash, Ticket, TrendingUp } from 'lucide-react';
-import { formatCents, formatDate, formatInteger, type PublicDrawDetail } from '@campaigns/shared';
+import { formatCents, formatDate, formatInteger, type PublicDrawDetail } from '@clubedarifa/shared';
 
 /**
  * Numeros do sorteio em destaque.

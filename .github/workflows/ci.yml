@@ -34,9 +34,9 @@ jobs:
         run: npm run contracts:verify
 
       - name: Compilar o pacote compartilhado
-        # As três aplicações importam os tipos de @campaigns/shared; sem build,
+        # As três aplicações importam os tipos de @clubedarifa/shared; sem build,
         # o typecheck não encontra as declarações.
-        run: npm run build -w @campaigns/shared
+        run: npm run build -w @clubedarifa/shared
 
       - name: Lint
         run: npm run lint

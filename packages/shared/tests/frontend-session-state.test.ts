@@ -103,14 +103,14 @@ describe('frontend · de onde vem o slug da comunidade', () => {
   const vazio = { hostname: 'localhost', search: '', storedSlug: null };
 
   it('subdominio tem precedencia: e o formato de producao', () => {
-    expect(detectTenantSlug({ ...vazio, hostname: 'minha.plataforma.local' })).toEqual({
+    expect(detectTenantSlug({ ...vazio, hostname: 'minha.clubedarifa.local' })).toEqual({
       slug: 'minha',
       source: 'subdomain',
     });
   });
 
   it('www nao e comunidade', () => {
-    expect(detectTenantSlug({ ...vazio, hostname: 'www.plataforma.local' }).source).not.toBe(
+    expect(detectTenantSlug({ ...vazio, hostname: 'www.clubedarifa.local' }).source).not.toBe(
       'subdomain',
     );
   });
@@ -146,7 +146,7 @@ describe('frontend · de onde vem o slug da comunidade', () => {
     expect(detectTenantSlug({ ...vazio, search: '?tenant=MinhaComunidade' }).slug).toBe(
       'minhacomunidade',
     );
-    expect(detectTenantSlug({ ...vazio, hostname: 'MINHA.plataforma.local' }).slug).toBe('minha');
+    expect(detectTenantSlug({ ...vazio, hostname: 'MINHA.clubedarifa.local' }).slug).toBe('minha');
   });
 
   it('o slug e apenas um NOME — nunca um identificador', () => {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { AuditListResponse } from '@campaigns/shared';
+import type { AuditListResponse } from '@clubedarifa/shared';
 import { api } from '../api.ts';
 import { ErrorState, Loading } from '../components/States.tsx';
 

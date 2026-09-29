@@ -1,4 +1,4 @@
-import { ApiClient, detectTenantSlug, resolveApiBaseUrl } from '@campaigns/shared';
+import { ApiClient, detectTenantSlug, resolveApiBaseUrl } from '@clubedarifa/shared';
 
 /**
  * Cliente da API.
@@ -9,7 +9,7 @@ import { ApiClient, detectTenantSlug, resolveApiBaseUrl } from '@campaigns/share
  * a configuracao recusa em producao. Em nenhum caso o cliente envia um
  * tenant_id: o identificador sai do banco e o vinculo e conferido la.
  *
- * A REGRA de onde o slug vem mora em `@campaigns/shared` e tem teste proprio;
+ * A REGRA de onde o slug vem mora em `@clubedarifa/shared` e tem teste proprio;
  * aqui fica so a leitura do navegador.
  */
 const STORAGE_KEY = 'tenantSlug';

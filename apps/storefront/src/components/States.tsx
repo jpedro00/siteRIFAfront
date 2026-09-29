@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, SearchX } from 'lucide-react';
-import { API_ERROR_MESSAGES, ApiClientError } from '@campaigns/shared';
+import { API_ERROR_MESSAGES, ApiClientError } from '@clubedarifa/shared';
 
 /**
  * Estados de tela da vitrine.

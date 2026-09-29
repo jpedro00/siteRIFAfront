@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
   "installCommand": "npm ci --prefix ../..",
-  "buildCommand": "npm run contracts:verify --prefix ../.. && npm run build -w @campaigns/shared --prefix ../.. && npm run build -w @campaigns/organizer --prefix ../..",
+  "buildCommand": "npm run contracts:verify --prefix ../.. && npm run build -w @clubedarifa/shared --prefix ../.. && npm run build -w @clubedarifa/organizer --prefix ../..",
   "outputDirectory": "dist",
   "github": {
     "silent": true

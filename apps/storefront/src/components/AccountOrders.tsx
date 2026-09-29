@@ -7,7 +7,7 @@ import {
   formatNumberLabel,
   shortOrderReference,
   type AccountOrder,
-} from '@campaigns/shared';
+} from '@clubedarifa/shared';
 import { api } from '../api.ts';
 import { ErrorState, Loading } from './States.tsx';
 

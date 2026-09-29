@@ -1,4 +1,4 @@
-import { MEMBERSHIP_ROLE_LABELS, type MembershipRole } from '@campaigns/shared';
+import { MEMBERSHIP_ROLE_LABELS, type MembershipRole } from '@clubedarifa/shared';
 import { useSession } from '../state/SessionProvider.tsx';
 
 /**

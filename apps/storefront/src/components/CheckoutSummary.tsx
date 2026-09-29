@@ -1,4 +1,4 @@
-import { formatCents, formatNumberLabel } from '@campaigns/shared';
+import { formatCents, formatNumberLabel } from '@clubedarifa/shared';
 
 /**
  * Resumo do que esta sendo comprado.

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertCircle, LogOut, ShieldCheck } from 'lucide-react';
-import { initialsOf } from '@campaigns/shared';
+import { initialsOf } from '@clubedarifa/shared';
 import { useStorefront } from '../state/SessionProvider.tsx';
 import { Loading, mensagemPara } from '../components/States.tsx';
 import { AccountOrders } from '../components/AccountOrders.tsx';

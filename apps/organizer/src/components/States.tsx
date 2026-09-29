@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ApiClientError } from '@campaigns/shared';
+import { ApiClientError } from '@clubedarifa/shared';
 
 /**
  * Estados de tela compartilhados: carregando, erro e acesso negado.

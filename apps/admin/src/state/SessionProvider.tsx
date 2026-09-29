@@ -13,7 +13,7 @@ import {
   type LoginResponse,
   type PlatformPermission,
   type SessionResponse,
-} from '@campaigns/shared';
+} from '@clubedarifa/shared';
 import { api } from '../api.ts';
 
 /**
@@ -52,7 +52,7 @@ interface SessionState {
 const SessionContext = createContext<SessionState | null>(null);
 
 /**
- * RN12 na tela. A regra mora em `@campaigns/shared` e tem teste proprio — os
+ * RN12 na tela. A regra mora em `@clubedarifa/shared` e tem teste proprio — os
  * tres frontends faziam esta mesma conta, cada um do seu jeito.
  */
 function statusFromSession(session: SessionResponse): SessionStatus {

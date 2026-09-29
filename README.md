@@ -1,7 +1,7 @@
-# TironiRifa — frontend
+# Clube da Rifa — frontend
 
 As tres aplicacoes React da plataforma de sorteios por comunidades. A API, o
-worker e o banco vivem em `tironirifa-backend`.
+worker e o banco vivem em `clubedarifa-backend`.
 
 Os dois repositorios instalam e compilam sem depender da pasta local um do
 outro: nenhuma dependencia `file:../` atravessa a fronteira.
@@ -40,7 +40,7 @@ continuariam compilando, e a diferenca apareceria no navegador de quem compra,
 como um campo que a API recusa. A conferencia transforma isso em falha de build,
 com o arquivo divergente nomeado.
 
-Para mudar um contrato: altere em `tironirifa-backend`, rode
+Para mudar um contrato: altere em `clubedarifa-backend`, rode
 `npm run contracts:snapshot` la subindo a versao do pacote, e traga as quatro
 arvores junto com o manifesto.
 
@@ -52,7 +52,7 @@ trate uma checagem deste lado como barreira de seguranca.
 
 ```bash
 npm ci
-# Os comandos raiz agora preparam @campaigns/shared automaticamente.
+# Os comandos raiz agora preparam @clubedarifa/shared automaticamente.
 cp apps/storefront/.env.example apps/storefront/.env.local
 cp apps/organizer/.env.example apps/organizer/.env.local
 cp apps/admin/.env.example apps/admin/.env.local

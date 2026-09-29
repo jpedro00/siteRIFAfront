@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
-import { ApiClientError, type DrawStatusPhase2 } from '@campaigns/shared';
+import { ApiClientError, type DrawStatusPhase2 } from '@clubedarifa/shared';
 
 /**
  * Pecas de interface do painel.

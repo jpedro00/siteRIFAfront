@@ -8,7 +8,7 @@ import {
   formatNumberLabel,
   labelDigitsForGridSize,
   type PublicDrawDetail,
-} from '@campaigns/shared';
+} from '@clubedarifa/shared';
 import { PrizeImage } from '../components/PrizeImage.tsx';
 import { ProgressBar } from '../components/ProgressBar.tsx';
 import { DrawStats } from '../components/DrawStats.tsx';

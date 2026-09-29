@@ -8,7 +8,7 @@ import {
   gridLabelRange,
   type CreateDrawRequest,
   type GridSize,
-} from '@campaigns/shared';
+} from '@clubedarifa/shared';
 import { PageHeader } from '../components/Ui.tsx';
 import { api } from '../api.ts';
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { LogOut, Menu, Ticket, X } from 'lucide-react';
-import { MEMBERSHIP_ROLE_LABELS, initialsOf, type TenantPermission } from '@campaigns/shared';
+import { MEMBERSHIP_ROLE_LABELS, initialsOf, type TenantPermission } from '@clubedarifa/shared';
 import { useSession } from '../state/SessionProvider.tsx';
 
 /**
@@ -100,7 +100,7 @@ export function DashboardShell({
             <Ticket size={18} />
           </span>
           <div>
-            <p className="sidebar__wordmark">RIFAS</p>
+            <p className="sidebar__wordmark">Clube da Rifa</p>
             <p className="sidebar__product">Painel do organizador</p>
           </div>
         </div>
