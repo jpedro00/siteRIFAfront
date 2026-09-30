@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AlertCircle, ArrowLeft, Lock } from 'lucide-react';
-import { formatPhoneBR, phoneDigits } from '@clubedarifa/shared';
+import { checkPhone, formatPhoneInput } from '@clubedarifa/shared';
 import { CheckoutSummary } from '../components/CheckoutSummary.tsx';
 import { ReservationTimer } from '../components/ReservationTimer.tsx';
 import { NotFoundState, mensagemPara } from '../components/States.tsx';
@@ -41,6 +41,7 @@ export function CheckoutPage() {
   const [telefone, setTelefone] = useState('');
   const [email, setEmail] = useState('');
   const [aceite, setAceite] = useState(false);
+  const [consentimento, setConsentimento] = useState(false);
   const [erros, setErros] = useState<ErrosFormulario>({});
   const [jaEnviou, setJaEnviou] = useState(false);
   const [enviando, setEnviando] = useState(false);
@@ -54,9 +55,10 @@ export function CheckoutPage() {
       encontrados.name = 'Informe seu nome completo.';
     }
 
-    const digitos = phoneDigits(telefone);
-    if (digitos.length < 10) {
-      encontrados.phone = 'Informe um telefone com DDD, como (11) 98888-7777.';
+    const telefoneConferido = checkPhone(telefone);
+    if (!telefoneConferido.valid) {
+      encontrados.phone =
+        telefoneConferido.message ?? 'Informe um telefone com DDD, como (11) 98888-7777.';
     }
 
     // E-mail e opcional; so e validado se tiver sido preenchido.
@@ -97,10 +99,11 @@ export function CheckoutPage() {
         reservationId: guardada.reservation.reservationId,
         buyer: {
           name: nome.trim(),
-          phone: phoneDigits(telefone),
+          phone: checkPhone(telefone).e164 ?? telefone,
           ...(email.trim() === '' ? {} : { email: email.trim() }),
         },
         acceptedTerms: true,
+        messagingConsent: consentimento,
       });
 
       clearReservation();
@@ -110,7 +113,7 @@ export function CheckoutPage() {
     } finally {
       setEnviando(false);
     }
-  }, [email, guardada, navigate, nome, telefone, validar]);
+  }, [consentimento, email, guardada, navigate, nome, telefone, validar]);
 
   // -------------------------------------------------------------------------
   // Sem reserva em memoria: recarregou a pagina depois de a reserva vencer, ou
@@ -213,11 +216,11 @@ export function CheckoutPage() {
                 inputMode="tel"
                 autoComplete="tel"
                 required
-                placeholder="(11) 98888-7777"
+                placeholder="(11) 98888-7777 ou +351 912 345 678"
                 value={telefone}
                 aria-invalid={erros.phone ? true : undefined}
                 aria-describedby={erros.phone ? 'erro-phone' : 'dica-phone'}
-                onChange={(event) => setTelefone(formatPhoneBR(event.target.value))}
+                onChange={(event) => setTelefone(formatPhoneInput(event.target.value))}
                 onBlur={revalidar}
               />
               {erros.phone ? (
@@ -297,6 +300,22 @@ export function CheckoutPage() {
                   {erros.terms}
                 </p>
               )}
+            </div>
+
+            <div className="field">
+              <label className="checkbox" htmlFor="campo-consent">
+                <input
+                  id="campo-consent"
+                  className="checkbox__input"
+                  type="checkbox"
+                  checked={consentimento}
+                  onChange={(event) => setConsentimento(event.target.checked)}
+                />
+                <span className="checkbox__text">
+                  Aceito receber avisos sobre esta compra e o resultado por mensagem{' '}
+                  <span className="muted">(opcional)</span>.
+                </span>
+              </label>
             </div>
           </fieldset>
 

@@ -32,6 +32,8 @@ export function ReviewQueuePage() {
   const load = useCallback(() => {
     setLoading(true);
     setError(null);
+    setExtras([]);
+    setCursor(undefined);
     api
       .call('platformReviewQueue')
       .then(setData)
@@ -41,7 +43,20 @@ export function ReviewQueuePage() {
 
   useEffect(load, [load]);
 
-  const draws = data?.draws ?? [];
+  const [extras, setExtras] = useState<NonNullable<typeof data>['draws']>([]);
+  const [cursor, setCursor] = useState<string | null | undefined>(undefined);
+  const draws = [...(data?.draws ?? []), ...extras];
+  const proximo = cursor === undefined ? (data?.nextCursor ?? null) : cursor;
+  const carregarMais = () => {
+    if (!proximo) return;
+    api
+      .call('platformReviewQueue', undefined, { query: { cursor: proximo } })
+      .then((r) => {
+        setExtras((antes) => [...antes, ...r.draws]);
+        setCursor(r.nextCursor);
+      })
+      .catch(setError);
+  };
   const podeDecidir = can('platform:review:decide');
 
   return (
@@ -87,6 +102,11 @@ export function ReviewQueuePage() {
             <ReviewCard key={draw.id} draw={draw} podeDecidir={podeDecidir} onDecided={load} />
           ))}
         </ul>
+      )}
+      {proximo && (
+        <button type="button" className="btn btn--secondary" onClick={carregarMais}>
+          Carregar mais
+        </button>
       )}
     </>
   );
