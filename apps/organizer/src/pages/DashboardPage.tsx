@@ -19,6 +19,7 @@ import {
   StatusBadge,
   TableSkeleton,
 } from '../components/Ui.tsx';
+import { SalesChart } from '../components/SalesChart.tsx';
 import { useApiResource } from '../hooks/useApiResource.ts';
 import { useSession } from '../state/SessionProvider.tsx';
 import { api } from '../api.ts';
@@ -42,6 +43,7 @@ export function DashboardPage() {
     [],
   );
 
+  const painel = useApiResource((signal) => api.call('tenantDashboard', undefined, { signal }), []);
   const lista = sorteios.data?.draws ?? [];
   const ativos = lista.filter((d) => d.status === 'ATIVA');
   const rascunhos = lista.filter((d) => d.status === 'RASCUNHO');
@@ -114,6 +116,33 @@ export function DashboardPage() {
               />
             )}
           </div>
+
+          {painel.status === 'ready' && painel.data && (
+            <section className="section" aria-labelledby="vendas-dia">
+              <div className="section__head">
+                <h2 className="section__title" id="vendas-dia">Vendas por dia</h2>
+              </div>
+              <div className="metrics">
+                <MetricCard
+                  label="PIX aguardando pagamento"
+                  value={formatInteger(painel.data.pendingPix)}
+                  hint="Pedidos com PIX gerado e ainda não pago"
+                  icon={<Timer size={17} aria-hidden="true" />}
+                  tone="warning"
+                />
+                {painel.data.manualRefunds !== null && painel.data.manualRefunds > 0 && (
+                  <MetricCard
+                    label="Devoluções manuais"
+                    value={formatInteger(painel.data.manualRefunds)}
+                    hint="Pagamentos aprovados que precisam de devolução"
+                    icon={<BadgeDollarSign size={17} aria-hidden="true" />}
+                    tone="warning"
+                  />
+                )}
+              </div>
+              <SalesChart days={painel.data.salesByDay} />
+            </section>
+          )}
 
           <section className="section">
             <div className="section__head">

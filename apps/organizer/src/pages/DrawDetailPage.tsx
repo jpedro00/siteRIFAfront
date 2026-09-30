@@ -20,12 +20,15 @@ import {
   formatDateTime,
   formatInteger,
   formatNumberLabel,
+  labelDigitsForGridSize,
   ORGANIZER_DRAW_TRANSITIONS,
   percentOf,
   storefrontDrawUrl,
   type DrawStatus,
   type OrganizerDraw,
 } from '@clubedarifa/shared';
+import { BuyersSection } from '../components/BuyersSection.tsx';
+import { ResultSection } from '../components/ResultSection.tsx';
 import { ErrorPanel, MetricCard, MetricsSkeleton, PageHeader, StatusBadge } from '../components/Ui.tsx';
 import { useApiResource } from '../hooks/useApiResource.ts';
 import { useSession } from '../state/SessionProvider.tsx';
@@ -434,6 +437,18 @@ export function DrawDetailPage() {
           </div>
         )}
       </section>
+
+      <ResultSection
+        drawId={id}
+        status={draw.status}
+        onChanged={() => {
+          sorteio.reload();
+        }}
+      />
+
+      {can('payment:read:status') && (
+        <BuyersSection drawId={id} labelDigits={labelDigitsForGridSize(draw.totalNumbers)} />
+      )}
     </>
   );
 }

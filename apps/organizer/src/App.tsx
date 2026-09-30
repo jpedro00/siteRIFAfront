@@ -1,4 +1,4 @@
-import { Link, Route, Routes } from 'react-router-dom';
+import { Link, Route, Routes, useMatch } from 'react-router-dom';
 import { LayoutDashboard, ScrollText, Ticket, Users } from 'lucide-react';
 import { SessionProvider, useSession } from './state/SessionProvider.tsx';
 import { AuthGate } from './pages/AuthGate.tsx';
@@ -10,6 +10,7 @@ import { DrawsListPage } from './pages/DrawsListPage.tsx';
 import { NewDrawPage } from './pages/NewDrawPage.tsx';
 import { DrawDetailPage } from './pages/DrawDetailPage.tsx';
 import { TeamPage } from './pages/TeamPage.tsx';
+import { InvitePage } from './pages/InvitePage.tsx';
 import { AuditPage } from './pages/AuditPage.tsx';
 
 /**
@@ -126,11 +127,19 @@ function Shell() {
 }
 
 export function App() {
+  // O convite e a unica tela que abre ANTES de a pessoa ter vinculo com a comunidade.
+  const convite = useMatch('/convite/:token');
   return (
     <SessionProvider>
-      <AuthGate>
-        <Shell />
-      </AuthGate>
+      {convite ? (
+        <Routes>
+          <Route path="/convite/:token" element={<InvitePage />} />
+        </Routes>
+      ) : (
+        <AuthGate>
+          <Shell />
+        </AuthGate>
+      )}
     </SessionProvider>
   );
 }

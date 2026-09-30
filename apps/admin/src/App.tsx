@@ -1,11 +1,12 @@
 import { Link, Route, Routes } from 'react-router-dom';
-import { Building2, ClipboardCheck } from 'lucide-react';
+import { Activity, Building2, ClipboardCheck } from 'lucide-react';
 import { SessionProvider, useSession } from './state/SessionProvider.tsx';
 import { AuthGate } from './pages/AuthGate.tsx';
 import { AdminShell, type AdminNavItem } from './components/AdminShell.tsx';
 import { ScrollToTop } from './components/ScrollToTop.tsx';
 import { AccessDenied, NotFoundState } from './components/States.tsx';
 import { TenantsPage } from './pages/TenantsPage.tsx';
+import { HealthPage } from './pages/HealthPage.tsx';
 import { ReviewQueuePage } from './pages/ReviewQueuePage.tsx';
 
 /**
@@ -32,6 +33,12 @@ const NAV: AdminNavItem[] = [
     label: 'Fila de revisão',
     icon: <ClipboardCheck size={17} aria-hidden="true" />,
     permission: 'platform:review:read',
+  },
+  {
+    to: '/saude',
+    label: 'Saúde',
+    icon: <Activity size={17} aria-hidden="true" />,
+    permission: 'platform:health:read',
   },
 ];
 
@@ -61,6 +68,16 @@ function Shell() {
               <ReviewQueuePage />
             ) : (
               <AccessDenied message="Seu perfil de Super Admin não inclui a revisão de sorteios." />
+            )
+          }
+        />
+        <Route
+          path="/saude"
+          element={
+            can('platform:health:read') ? (
+              <HealthPage />
+            ) : (
+              <AccessDenied message="Seu perfil de Super Admin não inclui a leitura da saúde da plataforma." />
             )
           }
         />

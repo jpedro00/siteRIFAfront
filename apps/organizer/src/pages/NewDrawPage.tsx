@@ -4,9 +4,12 @@ import { AlertCircle, ArrowLeft, Check } from 'lucide-react';
 import {
   ALLOWED_GRID_SIZES,
   ApiClientError,
+  DRAW_CLOSE_MODES,
+  drawReadinessProblems,
   formatCents,
   gridLabelRange,
   type CreateDrawRequest,
+  type DrawCloseMode,
   type GridSize,
 } from '@clubedarifa/shared';
 import { PageHeader } from '../components/Ui.tsx';
@@ -64,6 +67,11 @@ export function NewDrawPage() {
   const [preco, setPreco] = useState('');
   const [grade, setGrade] = useState<GridSize>(100);
   const [data, setData] = useState('');
+  const [precoPromo, setPrecoPromo] = useState('');
+  const [promoAte, setPromoAte] = useState('');
+  const [inicioVendas, setInicioVendas] = useState('');
+  const [modoFechamento, setModoFechamento] = useState<DrawCloseMode>('AO_ESGOTAR');
+  const [fechamento, setFechamento] = useState('');
 
   const [erros, setErros] = useState<Erros>({});
   const [jaEnviou, setJaEnviou] = useState(false);
@@ -71,6 +79,20 @@ export function NewDrawPage() {
   const [erroEnvio, setErroEnvio] = useState<string | null>(null);
 
   const centavos = parsePriceToCents(preco);
+  const iso = (v: string) => (v === '' || Number.isNaN(new Date(v).getTime()) ? undefined : new Date(v).toISOString());
+
+  // Checklist do que falta para ENVIAR A REVISAO: mesma funcao que a API usa (DOC-01 §4).
+  const pendencias = drawReadinessProblems({
+    title: titulo,
+    prizes: premio.trim() === '' ? [] : [{ name: premio }],
+    ticketPriceCents: centavos,
+    promotionalPriceCents: parsePriceToCents(precoPromo),
+    promoUntil: iso(promoAte),
+    salesStartAt: iso(inicioVendas),
+    closeAt: iso(fechamento),
+    drawDate: iso(data),
+    closeMode: modoFechamento,
+  });
 
   const validar = useCallback((): Erros => {
     const encontrados: Erros = {};
@@ -124,6 +146,12 @@ export function NewDrawPage() {
         // O input `datetime-local` nao traz fuso; `toISOString` resolve no
         // fuso do navegador, que e o de quem esta cadastrando.
         ...(data === '' ? {} : { drawDate: new Date(data).toISOString() }),
+        ...(parsePriceToCents(precoPromo) === null || iso(promoAte) === undefined
+          ? {}
+          : { promotionalPriceCents: parsePriceToCents(precoPromo)!, promoUntil: iso(promoAte)! }),
+        ...(iso(inicioVendas) === undefined ? {} : { salesStartAt: iso(inicioVendas)! }),
+        closeMode: modoFechamento,
+        ...(iso(fechamento) === undefined ? {} : { closeAt: iso(fechamento)! }),
       };
 
       const criado = await api.call('createDraw', corpo);
@@ -145,7 +173,12 @@ export function NewDrawPage() {
     data,
     descricao,
     descricaoPremio,
+    fechamento,
     grade,
+    inicioVendas,
+    modoFechamento,
+    precoPromo,
+    promoAte,
     imagem,
     navigate,
     preco,
@@ -411,6 +444,57 @@ export function NewDrawPage() {
             </div>
           </div>
         </fieldset>
+
+        <fieldset className="fieldset card" disabled={enviando}>
+          <div className="card__body stack stack--lg">
+            <legend className="fieldset__legend">Promoção e prazos</legend>
+            <p className="field__hint">Tudo aqui é opcional no rascunho, mas o preço promocional e o prazo andam juntos.</p>
+
+            <div className="field">
+              <label className="field__label" htmlFor="campo-precoPromo">Preço promocional</label>
+              <input id="campo-precoPromo" className="field__input" inputMode="decimal" placeholder="12,00" value={precoPromo} onChange={(e) => setPrecoPromo(e.target.value)} />
+            </div>
+            <div className="field">
+              <label className="field__label" htmlFor="campo-promoAte">Promoção vale até</label>
+              <input id="campo-promoAte" className="field__input" type="datetime-local" value={promoAte} onChange={(e) => setPromoAte(e.target.value)} />
+            </div>
+            <div className="field">
+              <label className="field__label" htmlFor="campo-inicio">Início das vendas</label>
+              <input id="campo-inicio" className="field__input" type="datetime-local" value={inicioVendas} onChange={(e) => setInicioVendas(e.target.value)} />
+            </div>
+            <div className="field">
+              <label className="field__label" htmlFor="campo-modo">Quando as vendas encerram</label>
+              <select id="campo-modo" className="field__input" value={modoFechamento} onChange={(e) => setModoFechamento(e.target.value as DrawCloseMode)}>
+                {DRAW_CLOSE_MODES.map((m) => (
+                  <option key={m} value={m}>
+                    {m === 'AO_ESGOTAR' ? 'Ao esgotar os números' : m === 'POR_DATA' ? 'Em uma data' : 'O que vier primeiro (data ou esgotar)'}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {modoFechamento !== 'AO_ESGOTAR' && (
+              <div className="field">
+                <label className="field__label" htmlFor="campo-fechamento">Data de fechamento</label>
+                <input id="campo-fechamento" className="field__input" type="datetime-local" value={fechamento} onChange={(e) => setFechamento(e.target.value)} />
+              </div>
+            )}
+          </div>
+        </fieldset>
+
+        <aside className="card" aria-labelledby="pendencias-titulo">
+          <div className="card__body">
+            <h2 id="pendencias-titulo" className="fieldset__legend">Para enviar à revisão</h2>
+            {pendencias.length === 0 ? (
+              <p className="muted"><Check size={14} aria-hidden="true" /> Nada pendente.</p>
+            ) : (
+              <ul className="plain-list">
+                {pendencias.map((p) => (
+                  <li key={p}>{p}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </aside>
 
         {erroEnvio && (
           <div className="alert alert--danger" role="alert">

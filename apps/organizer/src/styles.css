@@ -456,3 +456,14 @@ button:disabled {
   font-weight: var(--weight-extrabold);
   letter-spacing: var(--tracking-tight);
 }
+
+/* Etapa 6 · equipe, resultado, grafico */
+.sales-chart svg { width: 100%; height: 9rem; }
+.sales-chart__bar { fill: var(--primary); }
+.copy-link { display: flex; gap: var(--space-2); align-items: center; }
+.copy-link .field__input { flex: 1; min-width: 0; }
+.form-inline { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: flex-end; margin-bottom: var(--space-4); }
+.form-grid { display: grid; gap: var(--space-3); max-width: 36rem; }
+.form-actions { display: flex; gap: var(--space-2); }
+.result-card { display: grid; gap: var(--space-2); padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: var(--space-4); }
+.plain-list { list-style: none; padding: 0; display: grid; gap: var(--space-2); }
