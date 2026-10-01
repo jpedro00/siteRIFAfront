@@ -467,3 +467,7 @@ button:disabled {
 .form-actions { display: flex; gap: var(--space-2); }
 .result-card { display: grid; gap: var(--space-2); padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: var(--space-4); }
 .plain-list { list-style: none; padding: 0; display: grid; gap: var(--space-2); }
+
+/* Assinatura e recebimentos: rotulos e valores lado a lado sem quebrar no celular. */
+dl.stack > .row { align-items: baseline; gap: var(--space-3); }
+dl.stack dd { margin: 0; text-align: right; overflow-wrap: anywhere; }

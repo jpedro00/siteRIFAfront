@@ -1,5 +1,5 @@
 import { Link, Route, Routes, useMatch } from 'react-router-dom';
-import { LayoutDashboard, ScrollText, Ticket, Users } from 'lucide-react';
+import { CreditCard, Landmark, LayoutDashboard, ScrollText, Ticket, Users } from 'lucide-react';
 import { SessionProvider, useSession } from './state/SessionProvider.tsx';
 import { AuthGate } from './pages/AuthGate.tsx';
 import { DashboardShell, type NavItem } from './components/DashboardShell.tsx';
@@ -12,6 +12,8 @@ import { DrawDetailPage } from './pages/DrawDetailPage.tsx';
 import { TeamPage } from './pages/TeamPage.tsx';
 import { InvitePage } from './pages/InvitePage.tsx';
 import { AuditPage } from './pages/AuditPage.tsx';
+import { SubscriptionPage } from './pages/SubscriptionPage.tsx';
+import { ReceiptsPage } from './pages/ReceiptsPage.tsx';
 
 /**
  * Painel do Organizador.
@@ -44,6 +46,19 @@ const NAV: NavItem[] = [
     icon: <Users size={17} aria-hidden="true" />,
     permission: 'tenant:read',
     section: 'Comunidade',
+  },
+  {
+    to: '/assinatura',
+    label: 'Minha assinatura',
+    icon: <CreditCard size={17} aria-hidden="true" />,
+    permission: 'billing:read',
+    section: 'Financeiro',
+  },
+  {
+    to: '/recebimentos',
+    label: 'Recebimentos',
+    icon: <Landmark size={17} aria-hidden="true" />,
+    permission: 'payment_account:read',
   },
   {
     to: '/auditoria',
@@ -98,6 +113,26 @@ function Shell() {
         />
         <Route path="/sorteios/:id" element={<DrawDetailPage />} />
         <Route path="/equipe" element={<TeamPage />} />
+        <Route
+          path="/assinatura"
+          element={
+            can('billing:read') ? (
+              <SubscriptionPage />
+            ) : (
+              <AccessDenied message="Seu perfil não tem permissão para ver a assinatura desta comunidade." />
+            )
+          }
+        />
+        <Route
+          path="/recebimentos"
+          element={
+            can('payment_account:read') ? (
+              <ReceiptsPage />
+            ) : (
+              <AccessDenied message="Seu perfil não tem permissão para ver os recebimentos desta comunidade." />
+            )
+          }
+        />
         <Route
           path="/auditoria"
           element={

@@ -1,6 +1,5 @@
 import { useCallback, useState, type FormEvent } from 'react';
 import {
-  ApiClientError,
   MEMBERSHIP_ROLES,
   MEMBERSHIP_ROLE_LABELS,
   formatDateTime,
@@ -9,6 +8,10 @@ import {
 } from '@clubedarifa/shared';
 import { useApiResource } from '../hooks/useApiResource.ts';
 import { CopyLink } from './CopyLink.tsx';
+import { EntitlementNotice } from './BillingUi.tsx';
+import { EntitlementSummary } from './EntitlementSummary.tsx';
+import { describeEntitlementError } from '../lib/billingCopy.ts';
+import { useSession } from '../state/SessionProvider.tsx';
 import { api } from '../api.ts';
 
 /**
@@ -17,7 +20,9 @@ import { api } from '../api.ts';
  * hash do token. Quem perder o link reenvia o convite (o anterior e revogado).
  */
 export function TeamManagement() {
+  const { can } = useSession();
   const equipe = useApiResource((signal) => api.call('tenantTeam', undefined, { signal }), []);
+  const [ofereceAssinatura, setOfereceAssinatura] = useState(false);
   const [email, setEmail] = useState('');
   const [papel, setPapel] = useState<MembershipRole>('SUPPORT');
   const [convite, setConvite] = useState<InviteMemberResponse | null>(null);
@@ -29,11 +34,15 @@ export function TeamManagement() {
     async (acao: () => Promise<void>) => {
       setOcupado(true);
       setErro(null);
+      setOfereceAssinatura(false);
       try {
         await acao();
         equipe.reload();
       } catch (falha) {
-        setErro(falha instanceof ApiClientError ? falha.message : 'Não foi possível concluir a ação.');
+        // `PLAN_LIMIT_REACHED` / `SUBSCRIPTION_REQUIRED`: a API decidiu; a tela explica.
+        const descricao = describeEntitlementError(falha, 'Não foi possível concluir a ação.');
+        setErro(descricao.message);
+        setOfereceAssinatura(descricao.offerSubscription);
       } finally {
         setOcupado(false);
       }
@@ -60,7 +69,12 @@ export function TeamManagement() {
         </h2>
       </div>
 
-      {erro && (
+      <EntitlementSummary kind="team" />
+
+      {erro && ofereceAssinatura && (
+        <EntitlementNotice message={erro} offerSubscription canOpenSubscription={can('billing:read')} />
+      )}
+      {erro && !ofereceAssinatura && (
         <p className="alert alert--danger" role="alert">
           <span className="alert__body">{erro}</span>
         </p>

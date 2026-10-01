@@ -14,7 +14,6 @@ import {
   Timer,
 } from 'lucide-react';
 import {
-  ApiClientError,
   formatCents,
   formatCentsCompact,
   formatDateTime,
@@ -28,6 +27,9 @@ import {
   type OrganizerDraw,
 } from '@clubedarifa/shared';
 import { BuyersSection } from '../components/BuyersSection.tsx';
+import { EntitlementNotice } from '../components/BillingUi.tsx';
+import { EntitlementSummary } from '../components/EntitlementSummary.tsx';
+import { describeEntitlementError } from '../lib/billingCopy.ts';
 import { ResultSection } from '../components/ResultSection.tsx';
 import { ErrorPanel, MetricCard, MetricsSkeleton, PageHeader, StatusBadge } from '../components/Ui.tsx';
 import { useApiResource } from '../hooks/useApiResource.ts';
@@ -81,6 +83,8 @@ export function DrawDetailPage() {
 
   const [alterando, setAlterando] = useState(false);
   const [erroAcao, setErroAcao] = useState<string | null>(null);
+  // Limite do plano ou assinatura: a API recusou; a tela explica e oferece "Minha assinatura".
+  const [erroOfereceAssinatura, setErroOfereceAssinatura] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
 
   const sorteio = useApiResource<OrganizerDraw>(
@@ -100,17 +104,16 @@ export function DrawDetailPage() {
     async (status: DrawStatus) => {
       setAlterando(true);
       setErroAcao(null);
+      setErroOfereceAssinatura(false);
       try {
         await api.call('updateDrawStatus', { status }, { params: { id } });
         setConfirmando(false);
         sorteio.reload();
         numeros.reload();
       } catch (falha) {
-        setErroAcao(
-          falha instanceof ApiClientError
-            ? falha.message
-            : 'Não foi possível alterar a situação do sorteio.',
-        );
+        const descricao = describeEntitlementError(falha, 'Não foi possível alterar a situação do sorteio.');
+        setErroAcao(descricao.message);
+        setErroOfereceAssinatura(descricao.offerSubscription);
       } finally {
         setAlterando(false);
       }
@@ -252,7 +255,12 @@ export function DrawDetailPage() {
         </div>
       )}
 
-      {erroAcao && (
+      {draw.status === 'RASCUNHO' && <EntitlementSummary kind="draws" />}
+
+      {erroAcao && erroOfereceAssinatura && (
+        <EntitlementNotice message={erroAcao} offerSubscription canOpenSubscription={can('billing:read')} />
+      )}
+      {erroAcao && !erroOfereceAssinatura && (
         <div className="alert alert--danger" role="alert">
           <div className="alert__body">{erroAcao}</div>
         </div>

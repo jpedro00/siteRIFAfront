@@ -12,6 +12,7 @@ import {
   type DrawCloseMode,
   type GridSize,
 } from '@clubedarifa/shared';
+import { EntitlementSummary } from '../components/EntitlementSummary.tsx';
 import { PageHeader } from '../components/Ui.tsx';
 import { api } from '../api.ts';
 
@@ -202,6 +203,9 @@ export function NewDrawPage() {
         title="Novo sorteio"
         description="O sorteio é criado como rascunho. Para vender, envie-o para revisão: ele aparece na vitrine depois de aprovado pela plataforma."
       />
+
+      {/* Informativo: rascunho e livre; o limite vale ao enviar para revisao, e a API decide. */}
+      <EntitlementSummary kind="draws" />
 
       <form
         className="stack stack--xl"

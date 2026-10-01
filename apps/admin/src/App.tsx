@@ -1,5 +1,5 @@
 import { Link, Route, Routes } from 'react-router-dom';
-import { Activity, Building2, ClipboardCheck } from 'lucide-react';
+import { Activity, Building2, ClipboardCheck, CreditCard, Layers } from 'lucide-react';
 import { SessionProvider, useSession } from './state/SessionProvider.tsx';
 import { AuthGate } from './pages/AuthGate.tsx';
 import { AdminShell, type AdminNavItem } from './components/AdminShell.tsx';
@@ -8,6 +8,8 @@ import { AccessDenied, NotFoundState } from './components/States.tsx';
 import { TenantsPage } from './pages/TenantsPage.tsx';
 import { HealthPage } from './pages/HealthPage.tsx';
 import { ReviewQueuePage } from './pages/ReviewQueuePage.tsx';
+import { PlansPage } from './pages/PlansPage.tsx';
+import { SubscriptionsPage } from './pages/SubscriptionsPage.tsx';
 
 /**
  * Console Super Admin.
@@ -33,6 +35,18 @@ const NAV: AdminNavItem[] = [
     label: 'Fila de revisão',
     icon: <ClipboardCheck size={17} aria-hidden="true" />,
     permission: 'platform:review:read',
+  },
+  {
+    to: '/planos',
+    label: 'Planos',
+    icon: <Layers size={17} aria-hidden="true" />,
+    permission: 'platform:billing:read',
+  },
+  {
+    to: '/assinaturas',
+    label: 'Assinaturas',
+    icon: <CreditCard size={17} aria-hidden="true" />,
+    permission: 'platform:billing:read',
   },
   {
     to: '/saude',
@@ -68,6 +82,26 @@ function Shell() {
               <ReviewQueuePage />
             ) : (
               <AccessDenied message="Seu perfil de Super Admin não inclui a revisão de sorteios." />
+            )
+          }
+        />
+        <Route
+          path="/planos"
+          element={
+            can('platform:billing:read') ? (
+              <PlansPage />
+            ) : (
+              <AccessDenied message="Seu perfil de Super Admin não inclui o catálogo de planos." />
+            )
+          }
+        />
+        <Route
+          path="/assinaturas"
+          element={
+            can('platform:billing:read') ? (
+              <SubscriptionsPage />
+            ) : (
+              <AccessDenied message="Seu perfil de Super Admin não inclui a consulta de assinaturas." />
             )
           }
         />
