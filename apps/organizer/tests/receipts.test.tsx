@@ -1,7 +1,12 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiClientError, type PaymentAccount, type PaymentAccountsResponse } from '@clubedarifa/shared';
+import {
+  ApiClientError,
+  type PaymentAccount,
+  type PaymentAccountsResponse,
+  type PaymentMethodsResponse,
+} from '@clubedarifa/shared';
 
 const h = vi.hoisted(() => ({
   call: vi.fn(),
@@ -47,11 +52,30 @@ const resposta = (accounts: PaymentAccount[], extra: Partial<PaymentAccountsResp
   ...extra,
 });
 
+/** Resposta de `tenantPaymentMethods`; cada teste pode trocar. */
+const metodos = (extra: Partial<PaymentMethodsResponse> = {}): PaymentMethodsResponse => ({
+  status: 'OK',
+  provider: 'MERCADO_PAGO',
+  accountId: '33333333-3333-4333-8333-333333333333',
+  checkedAt: '2026-10-01T12:00:00.000Z',
+  methods: [
+    { kind: 'PIX', providerReported: true, enabled: true, reason: 'ENABLED' },
+    { kind: 'CREDIT_CARD', providerReported: true, enabled: false, reason: 'NOT_SUPPORTED_YET' },
+    { kind: 'DEBIT_CARD', providerReported: false, enabled: false, reason: 'NOT_SUPPORTED_YET' },
+    { kind: 'ACCOUNT_MONEY', providerReported: true, enabled: false, reason: 'NOT_SUPPORTED_YET' },
+    { kind: 'BOLETO', providerReported: true, enabled: false, reason: 'RESERVATION_WINDOW_UNDEFINED' },
+    { kind: 'OTHER', providerReported: false, enabled: false, reason: 'NOT_SUPPORTED_YET' },
+  ],
+  ...extra,
+});
+const METODOS = { current: () => metodos() };
+
 /** Sequencia de respostas para `tenantPaymentAccounts` (a 2a vale depois de recarregar). */
 function contas(...respostas: PaymentAccountsResponse[]) {
   let i = 0;
   h.call.mockImplementation(async (name: string) => {
     if (name === 'tenantPaymentAccounts') return respostas[Math.min(i++, respostas.length - 1)];
+    if (name === 'tenantPaymentMethods') return METODOS.current();
     throw new Error(`chamada inesperada: ${name}`);
   });
 }
@@ -75,7 +99,53 @@ beforeEach(() => {
   h.redirectTo.mockReset();
   h.confirm.mockReset();
   h.permissions = new Set(['payment_account:read', 'payment_account:manage']);
+  METODOS.current = () => metodos();
   vi.stubGlobal('confirm', h.confirm);
+});
+
+describe('Recebimentos · meios de pagamento (por capacidades)', () => {
+  it('conta conectada: so o PIX aparece ATIVO; cartao, saldo e boleto desligados, cada um com o motivo', async () => {
+    contas(resposta([conta()]));
+    abrir();
+    const painel = (await screen.findByRole('heading', { name: 'Meios de pagamento' })).closest('section')!;
+    await within(painel).findByText('PIX');
+    const itens = within(painel).getAllByRole('listitem');
+    const doMeio = (nome: string) => itens.find((li) => li.textContent?.startsWith(nome))!;
+
+    expect(within(doMeio('PIX')).getByText('Ativo')).toBeInTheDocument();
+    expect(within(doMeio('Cartão de crédito')).getByText('Desligado')).toBeInTheDocument();
+    expect(doMeio('Cartão de crédito')).toHaveTextContent('A sua conta oferece, mas a plataforma ainda não habilitou');
+    expect(doMeio('Cartão de débito')).toHaveTextContent('Ainda não habilitado pela plataforma');
+    expect(doMeio('Boleto')).toHaveTextContent(/30 minutos.*regra de prazo/);
+    // ativo e desligado se distinguem por TEXTO, nao so por cor
+    expect(within(painel).getAllByText('Ativo')).toHaveLength(1);
+    expect(painel).toHaveTextContent(/Dados de cartão nunca passam pelo nosso servidor/);
+  });
+
+  it('o Mercado Pago nao oferece PIX nesta conta: o PIX aparece desligado com o motivo', async () => {
+    METODOS.current = () =>
+      metodos({ methods: [{ kind: 'PIX', providerReported: false, enabled: false, reason: 'NOT_REPORTED_BY_PROVIDER' }] });
+    contas(resposta([conta()]));
+    abrir();
+    expect(await screen.findByText('A conta conectada não oferece este meio no Mercado Pago.')).toBeInTheDocument();
+    expect(screen.queryByText('Ativo')).toBeNull();
+  });
+
+  it('provedor fora do ar: aviso e nenhuma lista inventada', async () => {
+    METODOS.current = () => metodos({ status: 'UNAVAILABLE', methods: [] });
+    contas(resposta([conta()]));
+    abrir();
+    expect(await screen.findByText('O Mercado Pago não respondeu agora. Tente atualizar em instantes.')).toBeInTheDocument();
+    expect(screen.queryByText('PIX')).toBeNull();
+  });
+
+  it('sem conta conectada o painel nem aparece (e nada e consultado)', async () => {
+    contas(resposta([]));
+    abrir();
+    await screen.findByText('Nenhuma conta conectada');
+    expect(screen.queryByRole('heading', { name: 'Meios de pagamento' })).toBeNull();
+    expect(h.call).not.toHaveBeenCalledWith('tenantPaymentMethods', expect.anything(), expect.anything());
+  });
 });
 
 describe('Recebimentos · estados da conta', () => {

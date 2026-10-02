@@ -3,6 +3,8 @@ import { Link, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
   BadgeDollarSign,
+  Copy,
+  Pencil,
   CalendarDays,
   ExternalLink,
   Hash,
@@ -161,6 +163,18 @@ export function DrawDetailPage() {
         badge={<StatusBadge status={draw.status} />}
         actions={
           <>
+            {draw.status === 'RASCUNHO' && can('draw:write') && (
+              <Link className="btn btn--secondary" to={`/sorteios/${draw.id}/editar`}>
+                <Pencil size={16} aria-hidden="true" />
+                Editar rascunho
+              </Link>
+            )}
+            {can('draw:write') && (
+              <Link className="btn btn--ghost" to={`/sorteios/novo?duplicar=${draw.id}`}>
+                <Copy size={16} aria-hidden="true" />
+                Duplicar
+              </Link>
+            )}
             {acoes.map((acao) => {
               const Icone = acao.icone;
               const encerrar = acao.status === 'VENDAS ENCERRADAS';

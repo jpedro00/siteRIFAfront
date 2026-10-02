@@ -7,7 +7,7 @@ import { ScrollToTop } from './components/ScrollToTop.tsx';
 import { AccessDenied, ErrorState, Loading, NotFoundState } from './components/States.tsx';
 import { DashboardPage } from './pages/DashboardPage.tsx';
 import { DrawsListPage } from './pages/DrawsListPage.tsx';
-import { NewDrawPage } from './pages/NewDrawPage.tsx';
+import { DrawWizardPage } from './pages/DrawWizardPage.tsx';
 import { DrawDetailPage } from './pages/DrawDetailPage.tsx';
 import { TeamPage } from './pages/TeamPage.tsx';
 import { InvitePage } from './pages/InvitePage.tsx';
@@ -105,9 +105,19 @@ function Shell() {
           path="/sorteios/novo"
           element={
             can('draw:write') ? (
-              <NewDrawPage />
+              <DrawWizardPage />
             ) : (
               <AccessDenied message="Seu perfil não tem permissão para criar sorteios nesta comunidade." />
+            )
+          }
+        />
+        <Route
+          path="/sorteios/:id/editar"
+          element={
+            can('draw:write') ? (
+              <DrawWizardPage />
+            ) : (
+              <AccessDenied message="Seu perfil não tem permissão para editar sorteios nesta comunidade." />
             )
           }
         />

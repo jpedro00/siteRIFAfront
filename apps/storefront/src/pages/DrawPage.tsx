@@ -281,8 +281,13 @@ export function DrawPage() {
             <div className="row row--wrap">
               <StatusBadge status={draw.status} size="lg" />
             </div>
+            {draw.category && <p className="draw-page__kicker">{draw.category}</p>}
             <h1 className="draw-page__title">{draw.prizeName}</h1>
             <p className="draw-page__subtitle">{draw.title}</p>
+            {draw.subtitle && <p className="draw-page__tagline">{draw.subtitle}</p>}
+            {draw.customization.headline && (
+              <p className="draw-page__headline">{draw.customization.headline}</p>
+            )}
           </header>
 
           {comResultado && (
@@ -295,15 +300,16 @@ export function DrawPage() {
             </Link>
           )}
 
-          {/* RN29: regulamento, preco total e prazo da reserva ficam SEMPRE visiveis. A
-              descricao do sorteio e o regulamento ate existir campo proprio (S-REG1). */}
+          {/* RN29: regulamento, preco total e prazo da reserva ficam SEMPRE visiveis. O
+              regulamento e o texto proprio do sorteio; sorteios antigos, sem ele, mostram a
+              descricao. */}
           <section className="prose" aria-labelledby="regulamento" id="regulamento">
             <h2 id="regulamento-titulo" className="prose__title">
               <FileText size={18} aria-hidden="true" />
               Regulamento
             </h2>
-            {draw.description ? (
-              <p className="prose__pre">{draw.description}</p>
+            {(draw.regulation ?? draw.description) ? (
+              <p className="prose__pre">{draw.regulation ?? draw.description}</p>
             ) : (
               <p className="muted">A organização ainda não publicou o texto do regulamento.</p>
             )}
@@ -330,13 +336,36 @@ export function DrawPage() {
             </ul>
           </section>
 
-          {draw.prizeDescription && (
+          {draw.regulation && draw.description && (
+            <section className="prose" aria-labelledby="sobre-sorteio">
+              <h2 id="sobre-sorteio" className="prose__title">
+                <FileText size={18} aria-hidden="true" />
+                Sobre o sorteio
+              </h2>
+              <p className="prose__pre">{draw.description}</p>
+            </section>
+          )}
+
+          {(draw.prizeDescription || draw.prizes.length > 1 || draw.prizes.some((p) => p.estimatedValueCents)) && (
             <section className="prose" aria-labelledby="sobre-premio">
               <h2 id="sobre-premio" className="prose__title">
                 <Gift size={18} aria-hidden="true" />
-                O prêmio
+                {draw.prizes.length > 1 ? 'Os prêmios' : 'O prêmio'}
               </h2>
-              <p>{draw.prizeDescription}</p>
+              {draw.prizeDescription && draw.prizes.length <= 1 && <p>{draw.prizeDescription}</p>}
+              {(draw.prizes.length > 1 || draw.prizes.some((p) => p.estimatedValueCents)) && (
+                <ol className="prize-ranking">
+                  {draw.prizes.map((p) => (
+                    <li key={p.position}>
+                      <strong>{p.position}º</strong> {p.name}
+                      {p.estimatedValueCents ? (
+                        <span className="muted"> · valor estimado {formatCents(p.estimatedValueCents)}</span>
+                      ) : null}
+                      {p.description && <span className="prize-ranking__desc">{p.description}</span>}
+                    </li>
+                  ))}
+                </ol>
+              )}
             </section>
           )}
 
@@ -376,12 +405,16 @@ export function DrawPage() {
               <PromoNote draw={draw} />
             </div>
 
-            <ProgressBar paid={draw.paidCount} total={draw.totalNumbers} />
-            <SalesHint
-              total={draw.totalNumbers}
-              paid={draw.paidCount}
-              drawDate={draw.drawDate}
-            />
+            {draw.customization.progressMode !== 'OCULTAR' && (
+              <ProgressBar paid={draw.paidCount} total={draw.totalNumbers} />
+            )}
+            {draw.customization.progressMode === 'FALTAM' && (
+              <SalesHint
+                total={draw.totalNumbers}
+                paid={draw.paidCount}
+                drawDate={draw.drawDate}
+              />
+            )}
 
             <dl className="buy-panel__lines">
               <div className="buy-panel__line">
@@ -452,7 +485,9 @@ export function DrawPage() {
                 ? 'Reservando…'
                 : ordenados.length === 0
                   ? 'Escolha seus números'
-                  : `Reservar ${ordenados.length} ${ordenados.length === 1 ? 'número' : 'números'}`}
+                  : draw.customization.ctaLabel
+                    ? `${draw.customization.ctaLabel} (${ordenados.length})`
+                    : `Reservar ${ordenados.length} ${ordenados.length === 1 ? 'número' : 'números'}`}
             </button>
 
             <p className="buy-panel__note">

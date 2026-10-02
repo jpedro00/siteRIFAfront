@@ -6,6 +6,7 @@ import {
   formatNumberLabel,
   type DrawStatus,
 } from '@clubedarifa/shared';
+import { DeliveryPanel } from './DeliveryPanel.tsx';
 import { useApiResource } from '../hooks/useApiResource.ts';
 import { useSession } from '../state/SessionProvider.tsx';
 import { api } from '../api.ts';
@@ -22,6 +23,7 @@ const STATUS_COM_APURACAO: readonly DrawStatus[] = [
   'VENDAS ENCERRADAS',
   'APURAÇÃO',
   'RESULTADO PUBLICADO',
+  'ARQUIVADA',
 ];
 
 export function ResultSection({
@@ -127,12 +129,16 @@ export function ResultSection({
             Federal {atual.current.federalNumber} → {formatNumberLabel(atual.current.candidateNumber, atual.labelDigits)} ·
             versão {atual.current.version} · {formatDateTime(atual.current.publishedAt)}
           </p>
-          {podeEscrever && !corrigindo && (
+          {podeEscrever && !corrigindo && status !== 'ARQUIVADA' && (
             <button type="button" className="btn btn--ghost btn--sm" onClick={() => setCorrigindo(true)}>
               Corrigir resultado
             </button>
           )}
         </div>
+      )}
+
+      {atual && (status === 'RESULTADO PUBLICADO' || status === 'ARQUIVADA') && (
+        <DeliveryPanel drawId={drawId} status={status} delivery={atual.delivery} onChanged={() => { resultado.reload(); onChanged(); }} />
       )}
 
       {!atual && resultado.status === 'ready' && !podeEscrever && (

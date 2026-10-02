@@ -1,5 +1,5 @@
 import { Link, Route, Routes } from 'react-router-dom';
-import { Activity, Building2, ClipboardCheck, CreditCard, Layers } from 'lucide-react';
+import { Activity, Banknote, Building2, ClipboardCheck, CreditCard, Layers } from 'lucide-react';
 import { SessionProvider, useSession } from './state/SessionProvider.tsx';
 import { AuthGate } from './pages/AuthGate.tsx';
 import { AdminShell, type AdminNavItem } from './components/AdminShell.tsx';
@@ -10,6 +10,7 @@ import { HealthPage } from './pages/HealthPage.tsx';
 import { ReviewQueuePage } from './pages/ReviewQueuePage.tsx';
 import { PlansPage } from './pages/PlansPage.tsx';
 import { SubscriptionsPage } from './pages/SubscriptionsPage.tsx';
+import { FinancePage } from './pages/FinancePage.tsx';
 
 /**
  * Console Super Admin.
@@ -46,6 +47,12 @@ const NAV: AdminNavItem[] = [
     to: '/assinaturas',
     label: 'Assinaturas',
     icon: <CreditCard size={17} aria-hidden="true" />,
+    permission: 'platform:billing:read',
+  },
+  {
+    to: '/financeiro',
+    label: 'Financeiro',
+    icon: <Banknote size={17} aria-hidden="true" />,
     permission: 'platform:billing:read',
   },
   {
@@ -102,6 +109,16 @@ function Shell() {
               <SubscriptionsPage />
             ) : (
               <AccessDenied message="Seu perfil de Super Admin não inclui a consulta de assinaturas." />
+            )
+          }
+        />
+        <Route
+          path="/financeiro"
+          element={
+            can('platform:billing:read') ? (
+              <FinancePage />
+            ) : (
+              <AccessDenied message="Seu perfil de Super Admin não inclui o financeiro da plataforma." />
             )
           }
         />

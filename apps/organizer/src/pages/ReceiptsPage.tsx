@@ -9,6 +9,7 @@ import {
 } from '@clubedarifa/shared';
 import { api } from '../api.ts';
 import { ConfirmPanel, Notice, ToneBadge } from '../components/BillingUi.tsx';
+import { PaymentMethodsPanel } from '../components/PaymentMethodsPanel.tsx';
 import { EmptyState, ErrorPanel, MetricsSkeleton, PageHeader } from '../components/Ui.tsx';
 import { useApiResource } from '../hooks/useApiResource.ts';
 import {
@@ -242,6 +243,8 @@ export function ReceiptsPage() {
           )}
 
           {conectando && <p className="muted">{SWAP_NOTICE}</p>}
+
+          {principal.status === 'CONNECTED' && <PaymentMethodsPanel />}
 
           {anteriores.length > 0 && (
             <section className="section" aria-labelledby="contas-anteriores">

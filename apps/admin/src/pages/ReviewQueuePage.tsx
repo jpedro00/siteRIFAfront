@@ -4,6 +4,7 @@ import {
   ApiClientError,
   formatCents,
   formatDate,
+  formatDateTime,
   type PlatformReviewDecision,
   type ReviewQueueItem,
   type ReviewQueueResponse,
@@ -173,6 +174,90 @@ function ReviewCard({
         Grade de {draw.totalNumbers} números · {formatCents(draw.unitPriceCents)} por número ·
         sorteio em {formatDate(draw.drawDate) ?? 'data não definida'}
       </p>
+
+      <details className="review-detail">
+        <summary>Ver o sorteio completo antes de decidir</summary>
+        <div className="stack stack--sm review-detail__body">
+          {draw.subtitle && (
+            <p>
+              <strong>Subtítulo:</strong> {draw.subtitle}
+            </p>
+          )}
+          {draw.category && (
+            <p>
+              <strong>Categoria:</strong> {draw.category}
+            </p>
+          )}
+          {draw.description && (
+            <div>
+              <p>
+                <strong>Descrição</strong>
+              </p>
+              <p className="review-detail__text">{draw.description}</p>
+            </div>
+          )}
+
+          <div>
+            <p>
+              <strong>Prêmios</strong>
+            </p>
+            <ol className="review-detail__prizes">
+              {draw.prizes.map((p) => (
+                <li key={p.position}>
+                  {p.name}
+                  {p.estimatedValueCents ? <span className="muted"> · valor estimado {formatCents(p.estimatedValueCents)}</span> : null}
+                  {p.description && <span className="review-detail__sub">{p.description}</span>}
+                  {p.imageUrl ? (
+                    <span className="review-detail__sub">
+                      Foto: <code>{p.imageUrl}</code>
+                    </span>
+                  ) : (
+                    <span className="review-detail__sub muted">Sem foto</span>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          <div>
+            <p>
+              <strong>Cronograma</strong>
+            </p>
+            <ul className="plain-list">
+              <li>Início das vendas: {draw.salesStartAt ? formatDateTime(draw.salesStartAt) : 'ao aprovar'}</li>
+              <li>
+                Fechamento: {{ AO_ESGOTAR: 'ao esgotar os números', POR_DATA: 'em data fixa', O_QUE_VIER_PRIMEIRO: 'o que vier primeiro' }[draw.closeMode]}
+                {draw.closeAt ? ` — ${formatDateTime(draw.closeAt)}` : ''}
+              </li>
+              <li>Sorteio: {draw.drawDate ? formatDateTime(draw.drawDate) : 'não definido'} (Loteria Federal)</li>
+              <li>
+                Número apurado não vendido:{' '}
+                {draw.noWinnerPolicy === 'PROXIMO_VENDIDO_ACIMA' ? 'vale o próximo vendido acima' : 'sem contemplado'}
+              </li>
+              <li>Avisos de “faltam X”: {draw.thresholds.join(', ')}</li>
+            </ul>
+          </div>
+
+          <div>
+            <p>
+              <strong>Regulamento</strong>
+            </p>
+            {draw.regulation ? (
+              <p className="review-detail__text">{draw.regulation}</p>
+            ) : (
+              <p className="alert alert--warning">Este sorteio não tem regulamento próprio.</p>
+            )}
+          </div>
+
+          <p className="muted">
+            Barra de progresso: {{ FALTAM: 'faltam X', PERCENTUAL: '% vendido', OCULTAR: 'oculta' }[draw.customization.progressMode]}
+            {draw.customization.headline ? ` · chamada: “${draw.customization.headline}”` : ''}
+            {draw.customization.ctaLabel ? ` · botão: “${draw.customization.ctaLabel}”` : ''}
+            {' · enviado em '}
+            {formatDateTime(draw.submittedAt)}
+          </p>
+        </div>
+      </details>
 
       {erro && (
         <p className="alert alert--danger" role="alert">

@@ -1,8 +1,9 @@
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Award, FileCheck2, Trophy } from 'lucide-react';
+import { ArrowLeft, Award, FileCheck2, PackageCheck, Trophy } from 'lucide-react';
 import {
   ApiClientError,
   formatDateTime,
+  type DeliveryMethod,
   formatNumberLabel,
   type DrawResultVersion,
 } from '@clubedarifa/shared';
@@ -23,6 +24,12 @@ import { api } from '../api.ts';
  * Um resultado CORRIGIDO nao apaga o anterior: a versao antiga continua aqui, marcada
  * como retificada, para quem viu o primeiro numero entender o que mudou.
  */
+const ROTULO_ENTREGA: Record<DeliveryMethod, string> = {
+  RETIRADA: 'retirada pelo ganhador',
+  ENVIO: 'enviado ao ganhador',
+  TRANSFERENCIA: 'transferência ao ganhador',
+};
+
 export function ResultPage() {
   const { slug = '' } = useParams<{ slug: string }>();
 
@@ -111,6 +118,25 @@ export function ResultPage() {
           <p className="result__none">
             O número apurado não foi vendido e a regra do sorteio não prevê outro contemplado.
           </p>
+        )}
+      </section>
+
+      {/* DOC-01 §15: status publico da entrega. So o fato, a data e a forma — sem rastreio nem foto. */}
+      <section className="result__delivery" aria-labelledby="entrega">
+        <h2 id="entrega" className="prose__title">
+          <PackageCheck size={18} aria-hidden="true" />
+          Entrega do prêmio
+        </h2>
+        {dados.delivery ? (
+          <p className="alert alert--success" role="status">
+            <span className="alert__body">
+              <strong>Prêmio entregue em {new Date(dados.delivery.deliveredAt).toLocaleDateString('pt-BR')}</strong>
+              {' · '}
+              {ROTULO_ENTREGA[dados.delivery.method]}
+            </span>
+          </p>
+        ) : (
+          <p className="muted">A entrega do prêmio ainda não foi registrada pela organização.</p>
         )}
       </section>
 
