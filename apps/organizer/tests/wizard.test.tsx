@@ -8,7 +8,7 @@ const h = vi.hoisted(() => ({
   permissions: new Set<string>(),
 }));
 
-vi.mock('../src/api.ts', () => ({ api: { call: h.call } }));
+vi.mock('../src/api.ts', () => ({ api: { call: h.call }, apiBaseUrl: 'https://api.test' }));
 vi.mock('../src/state/SessionProvider.tsx', () => ({
   useSession: () => ({
     can: (p: string) => h.permissions.has(p),
@@ -391,19 +391,21 @@ describe('passos', () => {
     expect(screen.getByLabelText(/Primeiros números da grade de 1000/)).toHaveTextContent('000');
   });
 
-  it('funcionalidades sem infraestrutura aparecem como NAO disponiveis, sem campos falsos', async () => {
+  it('foto do premio e enviada (sem campo de link tecnico); o que ainda nao existe aparece como futuro, sem campos falsos', async () => {
     abrir();
     fireEvent.click(screen.getByRole('button', { name: /Prêmios/ }));
-    expect(screen.getByText(/depende do armazenamento de arquivos/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Escolher imagem' })).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Endereço da foto/)).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /Preço/ }));
-    expect(screen.getByText(/Compra mínima e máxima por pessoa/)).toBeInTheDocument();
-    expect(screen.queryByLabelText(/mínima/i)).toBeNull();
+    expect(screen.getByLabelText(/Mínimo de números por pedido/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Máximo de números por pedido/)).toBeInTheDocument();
+    expect(screen.getByText(/Pacotes de números/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Automações/ }));
     expect(screen.getByText(/Clientes cativos e pré-autorização/)).toBeInTheDocument();
     expect(screen.queryByLabelText(/cativ/i)).toBeNull();
   });
 
-  it('personalizacao: so o que a vitrine honra (progresso, chamada, botao)', async () => {
+  it('personalizacao: progresso, chamada, botao, banner, cor, contador e compradores', async () => {
     abrir();
     fireEvent.click(screen.getByRole('button', { name: /Personalização/ }));
     expect(screen.getByRole('radio', { name: /Mostrar “faltam X”/ })).toBeChecked();
@@ -411,7 +413,12 @@ describe('passos', () => {
     await digitar(/Chamada principal/, 'Corra!');
     await digitar(/Texto do botão de compra/, 'Quero!');
     expect(screen.getByRole('radio', { name: /Ocultar o progresso/ })).toBeChecked();
-    expect(screen.queryByLabelText(/cor de destaque/i)).toBeNull();
+    expect(screen.getByLabelText(/Cor de destaque/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Escolher imagem' })).toBeInTheDocument();
+    expect(screen.getByLabelText(/contador regressivo/i)).not.toBeChecked();
+    expect(screen.getByLabelText(/Mostrar quem já comprou/)).not.toBeChecked();
+    fireEvent.click(screen.getByLabelText(/Mostrar quem já comprou/));
+    expect(screen.getByLabelText(/Mostrar quem já comprou/)).toBeChecked();
   });
 
   it('regulamento: o modelo preenche o vazio e pede confirmacao antes de substituir um texto', async () => {

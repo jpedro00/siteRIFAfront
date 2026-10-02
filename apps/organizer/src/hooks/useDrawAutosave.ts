@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiClientError } from '@clubedarifa/shared';
 import { api } from '../api.ts';
-import { buildCreateRequest, buildUpdateRequest, type DrawForm } from '../lib/drawForm.ts';
+import { buildCreateRequest, buildUpdateRequest, emptyForm, type DrawForm } from '../lib/drawForm.ts';
 
 /**
  * Salvamento automatico do assistente (DOC-01 §4: "o rascunho e salvo a cada passo").
@@ -40,7 +40,10 @@ const chaveLocal = (scope: string, id: string | null) => `clubedarifa:wizard:v1:
 export function readLocal(scope: string, id: string | null): LocalRecord | null {
   try {
     const bruto = window.localStorage.getItem(chaveLocal(scope, id));
-    return bruto ? (JSON.parse(bruto) as LocalRecord) : null;
+    if (!bruto) return null;
+    const lido = JSON.parse(bruto) as LocalRecord;
+    // Copia gravada por uma versao anterior nao tem os campos novos: completa com o padrao.
+    return { ...lido, form: { ...emptyForm(), ...lido.form } };
   } catch {
     return null;
   }

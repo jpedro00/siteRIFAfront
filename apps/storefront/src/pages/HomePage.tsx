@@ -9,6 +9,7 @@ import { DrawCardSkeleton, HeroSkeleton } from '../components/Skeletons.tsx';
 import { useApiResource } from '../hooks/useApiResource.ts';
 import { useStorefront } from '../state/SessionProvider.tsx';
 import { api } from '../api.ts';
+import { imageSrc } from '../lib/brand.ts';
 
 /**
  * Home comercial.
@@ -53,6 +54,14 @@ export function HomePage() {
 
   return (
     <div className="home">
+      {(tenant?.bannerUrl || tenant?.description) && (
+        <div className="container">
+          <section className="community-intro" aria-label={`Sobre ${nomeComunidade}`}>
+            {imageSrc(tenant?.bannerUrl) && <img className="community-intro__banner" src={imageSrc(tenant?.bannerUrl)!} alt="" />}
+            {tenant?.description && <p className="community-intro__text">{tenant.description}</p>}
+          </section>
+        </div>
+      )}
       {destaque ? (
         <div className="container">
           <DrawHero draw={destaque} />

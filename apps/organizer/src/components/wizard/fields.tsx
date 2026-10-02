@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { AlertCircle } from 'lucide-react';
+import { isLegibleAccent } from '@clubedarifa/shared';
 import type { DrawForm, StepProblem } from '../../lib/drawForm.ts';
 
 /**
@@ -171,5 +172,71 @@ export function ComingSoon({ title, items }: { title: string; items: readonly st
         ))}
       </ul>
     </aside>
+  );
+}
+
+export function CheckField({
+  id,
+  label,
+  hint,
+  checked,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  hint?: ReactNode;
+  checked: boolean;
+  onChange: (valor: boolean) => void;
+}) {
+  return (
+    <div className="field">
+      <label className="check" htmlFor={id}>
+        <input id={id} type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} aria-describedby={hint ? `${id}-dica` : undefined} />
+        <span>{label}</span>
+      </label>
+      {hint && (
+        <p className="field__hint" id={`${id}-dica`}>
+          {hint}
+        </p>
+      )}
+    </div>
+  );
+}
+
+export function ColorField({
+  id,
+  label,
+  hint,
+  value,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  hint?: ReactNode;
+  value: string;
+  onChange: (valor: string) => void;
+}) {
+  return (
+    <div className="field">
+      <label className="field__label" htmlFor={id}>
+        {label} <span className="muted">(opcional)</span>
+      </label>
+      <div className="row">
+        <input id={id} type="color" className="color-input" value={value || '#1d4ed8'} onChange={(e) => onChange(e.target.value)} />
+        <span className="muted">{value || 'Cor padrão da comunidade'}</span>
+        {value && (
+          <button type="button" className="btn btn--ghost btn--sm" onClick={() => onChange('')}>
+            Usar a cor padrão
+          </button>
+        )}
+      </div>
+      {value && !isLegibleAccent(value) ? (
+        <p className="field__error" role="alert">
+          Esta cor é clara demais: o botão com texto branco ficaria difícil de ler. A vitrine vai usar a cor padrão.
+        </p>
+      ) : (
+        hint && <p className="field__hint">{hint}</p>
+      )}
+    </div>
   );
 }

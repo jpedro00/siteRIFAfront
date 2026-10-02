@@ -20,7 +20,8 @@ import {
   emptyPrize,
   parseMoneyToCents,
 } from '../../lib/drawForm.ts';
-import { ComingSoon, SelectField, TextAreaField, TextField, erroDe, type StepProps } from './fields.tsx';
+import { ImageUploader } from '../ImageUploader.tsx';
+import { CheckField, ColorField, ComingSoon, SelectField, TextAreaField, TextField, erroDe, type StepProps } from './fields.tsx';
 
 /** Os oito passos de preenchimento do assistente (o nono, a revisao, fica em `WizardReview`). */
 
@@ -146,7 +147,6 @@ export function StepPrizes({ form, set, ...rest }: StepProps) {
 
       <ol className="prize-list">
         {lista.map((p, i) => {
-          const imagemValida = /^https:\/\//i.test(p.imageUrl.trim());
           return (
             <li key={p.key} className="prize-card card">
               <div className="card__body stack">
@@ -213,31 +213,13 @@ export function StepPrizes({ form, set, ...rest }: StepProps) {
                   onChange={(v) => atualiza(i, { value: v })}
                   error={erroDe(rest, `prize-${i}-value`)}
                 />
-                <TextField
-                  id={`prize-${i}-image`}
-                  label="Endereço da foto"
-                  optional
-                  type="url"
-                  inputMode="url"
-                  placeholder="https://…"
+                <ImageUploader
+                  label={i === 0 ? 'Foto do prêmio (capa)' : 'Foto do prêmio'}
                   value={p.imageUrl}
-                  maxLength={2000}
                   onChange={(v) => atualiza(i, { imageUrl: v })}
                   error={erroDe(rest, `prize-${i}-image`)}
-                  hint="Só links https://. O envio de arquivos ainda não está disponível."
                 />
-                {imagemValida && (
-                  <img
-                    className="prize-card__preview"
-                    src={p.imageUrl.trim()}
-                    alt={`Prévia da foto de ${p.name.trim() || 'prêmio'}`}
-                    referrerPolicy="no-referrer"
-                    loading="lazy"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                )}
+
               </div>
             </li>
           );
@@ -258,11 +240,8 @@ export function StepPrizes({ form, set, ...rest }: StepProps) {
       </div>
 
       <ComingSoon
-        title="Ainda não disponível neste passo"
-        items={[
-          'Envio de fotos do computador ou celular (galeria com até 10 imagens por prêmio, recortes e ponto focal): depende do armazenamento de arquivos.',
-          'Vídeo do prêmio.',
-        ]}
+        title="Em uma próxima versão"
+        items={['Várias fotos por prêmio, recorte e ponto focal.', 'Vídeo do prêmio.']}
       />
     </div>
   );
@@ -373,13 +352,33 @@ export function StepPrice({ form, set, ...rest }: StepProps) {
         value={form.promoUntil}
         onChange={(v) => set('promoUntil', v)}
       />
+      <TextField
+        id="minPerOrder"
+        label="Mínimo de números por pedido"
+        optional
+        inputMode="numeric"
+        placeholder="1"
+        value={form.minPerOrder}
+        maxLength={3}
+        onChange={(v) => set('minPerOrder', v.replace(/[^0-9]/g, ''))}
+        error={erroDe(rest, 'minPerOrder')}
+        hint="Em branco: sem mínimo."
+      />
+      <TextField
+        id="maxPerOrder"
+        label="Máximo de números por pedido"
+        optional
+        inputMode="numeric"
+        placeholder="10"
+        value={form.maxPerOrder}
+        maxLength={3}
+        onChange={(v) => set('maxPerOrder', v.replace(/[^0-9]/g, ''))}
+        error={erroDe(rest, 'maxPerOrder')}
+        hint="Em branco: sem máximo. O limite é aplicado também pelo servidor."
+      />
       <ComingSoon
-        title="Ainda não disponível neste passo"
-        items={[
-          'Compra mínima e máxima por pessoa.',
-          'Pacotes de números (ex.: 5 por R$ X).',
-          'Cupons: dependem do módulo de cupons e afiliados.',
-        ]}
+        title="Em uma próxima versão"
+        items={['Pacotes de números (ex.: 5 por R$ X).', 'Cupons e afiliados.']}
       />
     </div>
   );
@@ -508,14 +507,34 @@ export function StepCustomization({ form, set }: StepProps) {
         onChange={(v) => set('ctaLabel', v)}
         hint="Em branco: “Reservar números”."
       />
-      <ComingSoon
-        title="Ainda não disponível neste passo"
-        items={[
-          'Banner próprio, cor de destaque (com teste de contraste) e modelos de página.',
-          'Contador regressivo e botões de compra rápida configuráveis.',
-          'Exibir compradores com nome mascarado.',
-        ]}
+      <ImageUploader
+        label="Banner da página do sorteio"
+        shape="wide"
+        value={form.bannerUrl}
+        onChange={(v) => set('bannerUrl', v)}
+        hint="Aparece no topo da página do sorteio. Em branco: a foto do prêmio principal."
       />
+      <ColorField
+        id="accentColor"
+        label="Cor de destaque"
+        value={form.accentColor}
+        onChange={(v) => set('accentColor', v)}
+        hint="Usada no botão de compra e nos destaques desta página."
+      />
+      <CheckField
+        id="showCountdown"
+        label="Mostrar contador regressivo até o fechamento das vendas"
+        checked={form.showCountdown}
+        onChange={(v) => set('showCountdown', v)}
+      />
+      <CheckField
+        id="showBuyers"
+        label="Mostrar quem já comprou (nome abreviado)"
+        hint="Ex.: “Maria L. · 3 números”. Nunca mostra telefone nem e-mail."
+        checked={form.showBuyers}
+        onChange={(v) => set('showBuyers', v)}
+      />
+      <ComingSoon title="Em uma próxima versão" items={['Modelos de página e botões de compra rápida configuráveis.']} />
     </div>
   );
 }

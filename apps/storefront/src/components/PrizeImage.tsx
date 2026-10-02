@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Gift } from 'lucide-react';
+import { imageSrc } from '../lib/brand.ts';
 
 /**
  * Imagem do premio.
@@ -31,8 +32,9 @@ export function PrizeImage({
 }) {
   const [falhou, setFalhou] = useState(false);
   const classe = `prize-image prize-image--${ratio}`;
+  const src = imageSrc(url);
 
-  if (!url || falhou) {
+  if (!src || falhou) {
     return (
       <div className={`${classe} prize-image--empty`} role="img" aria-label={`${alt} (sem foto)`}>
         <Gift size={28} strokeWidth={1.5} aria-hidden="true" />
@@ -44,7 +46,7 @@ export function PrizeImage({
   return (
     <div className={classe}>
       <img
-        src={url}
+        src={src}
         alt={alt}
         loading={priority ? 'eager' : 'lazy'}
         // A imagem do topo e o maior elemento da tela: decodifica-la de forma

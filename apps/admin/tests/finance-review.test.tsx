@@ -31,6 +31,9 @@ const resumo = (extra: Partial<PlatformReconciliationResponse> = {}): PlatformRe
   ],
   issues: [
     {
+      id: '33333333-3333-4333-8333-333333333331',
+      reviewStatus: 'ABERTA',
+      reviewNote: null,
       kind: 'MANUAL_REFUND_OPEN',
       tenantSlug: 'clube-a',
       tenantName: 'Clube A',
@@ -41,6 +44,9 @@ const resumo = (extra: Partial<PlatformReconciliationResponse> = {}): PlatformRe
       detectedAt: '2026-10-01T10:00:00.000Z',
     },
     {
+      id: '33333333-3333-4333-8333-333333333332',
+      reviewStatus: 'EM_ANALISE',
+      reviewNote: 'Aguardando o organizador.',
       kind: 'PAYMENT_AUTHORIZATION_UNAVAILABLE',
       tenantSlug: 'clube-b',
       tenantName: 'Clube B',
@@ -99,11 +105,16 @@ describe('Console · Financeiro (conciliacao)', () => {
     expect(await screen.findByRole('table')).toBeInTheDocument();
   });
 
-  it('nao e uma tela de acao: nenhum botao alem de Atualizar', async () => {
+  it('nao faz operacao financeira: so Atualizar e registrar observacao de revisao', async () => {
     h.call.mockResolvedValue(resumo());
     render(<FinancePage />);
     await screen.findByRole('table');
-    expect(screen.getAllByRole('button').map((b) => b.textContent?.trim())).toEqual(['Atualizar']);
+    expect(screen.getAllByRole('button').map((b) => b.textContent?.trim())).toEqual([
+      'Atualizar',
+      'Registrar observação',
+      'Registrar observação',
+    ]);
+    expect(screen.getByText('Aguardando o organizador.')).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-/);
   });
 });
@@ -185,6 +196,25 @@ describe('Console · fila de revisao com o sorteio completo', () => {
         'platformReviewDecide',
         { to: 'RASCUNHO', reason: 'Faltou o CNPJ no regulamento.' },
         { params: { id: '11111111-1111-4111-8111-111111111111' } },
+      ),
+    );
+  });
+});
+
+describe('Console · Financeiro · revisao', () => {
+  it('registra status e observacao pela rota de revisao e recarrega', async () => {
+    h.call.mockResolvedValue(resumo());
+    render(<FinancePage />);
+    await screen.findByRole('table');
+    fireEvent.click(screen.getAllByRole('button', { name: 'Registrar observação' })[0]!);
+    fireEvent.change(screen.getByLabelText('Status da revisão'), { target: { value: 'EM_ANALISE' } });
+    fireEvent.change(screen.getByLabelText('Observação'), { target: { value: 'Falei com o organizador.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar revisão' }));
+    await vi.waitFor(() =>
+      expect(h.call).toHaveBeenCalledWith(
+        'platformReviewReconciliation',
+        { status: 'EM_ANALISE', note: 'Falei com o organizador.' },
+        { params: { id: '33333333-3333-4333-8333-333333333331' } },
       ),
     );
   });

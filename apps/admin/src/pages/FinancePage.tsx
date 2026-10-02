@@ -1,11 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
 import { CheckCircle2, RefreshCw } from 'lucide-react';
 import {
+  ApiClientError,
+  RECONCILIATION_REVIEW_LABELS,
+  RECONCILIATION_REVIEW_STATUSES,
   formatCents,
   formatDateTime,
   type PlatformReconciliationResponse,
+  type ReconciliationIssue,
   type ReconciliationKind,
+  type ReconciliationReviewStatus,
 } from '@clubedarifa/shared';
+import { useSession } from '../state/SessionProvider.tsx';
 import { api } from '../api.ts';
 import { ToneBadge } from '../components/BillingUi.tsx';
 import { ErrorState, Loading } from '../components/States.tsx';
@@ -14,10 +20,10 @@ import type { Tone } from '../lib/billingAdmin.ts';
 /**
  * Financeiro · divergencias da conciliacao (DOC-01 §17 · Cobrancas).
  *
- * So leitura: a conciliacao do worker compara o que o PSP diz com o que a plataforma tem e
- * registra o que nao fecha. Resolver cada caso e uma acao financeira (devolucao, ajuste) que
- * ainda nao existe no console; por isso esta tela mostra, nao age. Nenhum identificador
- * completo de pagamento aparece — so uma referencia curta do pedido.
+ * A conciliacao do worker compara o que o PSP diz com o que a plataforma tem e registra o que
+ * nao fecha. Aqui o Super Admin ve a divergencia e registra a observacao e o status da revisao
+ * (aberta, em analise, resolvida manualmente). Devolucao e ajuste financeiro NAO sao feitos
+ * aqui. Nenhum identificador completo de pagamento aparece — so uma referencia curta do pedido.
  */
 const TIPOS: Record<ReconciliationKind, { rotulo: string; tone: Tone; explicacao: string }> = {
   APPROVED_ORDER_NOT_PAID: {
@@ -46,6 +52,77 @@ const TIPOS: Record<ReconciliationKind, { rotulo: string; tone: Tone; explicacao
     explicacao: 'A autorização da conta do organizador caiu com um pagamento pendente. Não é possível consultá-lo no provedor.',
   },
 };
+
+function ReviewCell({ issue, onSaved }: { issue: ReconciliationIssue; onSaved: () => void }) {
+  const { can } = useSession();
+  const [aberto, setAberto] = useState(false);
+  const [status, setStatus] = useState<ReconciliationReviewStatus>(issue.reviewStatus);
+  const [nota, setNota] = useState(issue.reviewNote ?? '');
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const podeAnotar = can('platform:billing:read');
+
+  async function salvar() {
+    setSalvando(true);
+    setErro(null);
+    try {
+      await api.call('platformReviewReconciliation', { status, note: nota }, { params: { id: issue.id } });
+      setAberto(false);
+      onSaved();
+    } catch (e) {
+      setErro(e instanceof ApiClientError ? e.message : 'Não foi possível salvar.');
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <td>
+      <ToneBadge tone={issue.reviewStatus === 'ABERTA' ? 'warning' : 'info'}>
+        {RECONCILIATION_REVIEW_LABELS[issue.reviewStatus]}
+      </ToneBadge>
+      {issue.reviewNote && <p className="muted table__hint">{issue.reviewNote}</p>}
+      {podeAnotar && !aberto && (
+        <p>
+          <button type="button" className="btn btn--ghost btn--sm" onClick={() => setAberto(true)}>
+            Registrar observação
+          </button>
+        </p>
+      )}
+      {aberto && (
+        <div className="stack">
+          <label className="field__label" htmlFor={`rev-status-${issue.id}`}>
+            Status da revisão
+          </label>
+          <select id={`rev-status-${issue.id}`} className="input" value={status} onChange={(e) => setStatus(e.target.value as ReconciliationReviewStatus)}>
+            {RECONCILIATION_REVIEW_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {RECONCILIATION_REVIEW_LABELS[s]}
+              </option>
+            ))}
+          </select>
+          <label className="field__label" htmlFor={`rev-nota-${issue.id}`}>
+            Observação
+          </label>
+          <textarea id={`rev-nota-${issue.id}`} className="input" rows={3} maxLength={2000} value={nota} onChange={(e) => setNota(e.target.value)} />
+          {erro && (
+            <p className="field__error" role="alert">
+              {erro}
+            </p>
+          )}
+          <div className="row">
+            <button type="button" className="btn btn--primary btn--sm" disabled={salvando} onClick={() => void salvar()}>
+              {salvando ? 'Salvando…' : 'Salvar revisão'}
+            </button>
+            <button type="button" className="btn btn--ghost btn--sm" disabled={salvando} onClick={() => setAberto(false)}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+    </td>
+  );
+}
 
 export function FinancePage() {
   const [data, setData] = useState<PlatformReconciliationResponse | null>(null);
@@ -117,11 +194,12 @@ export function FinancePage() {
                     Valor
                   </th>
                   <th scope="col">Detectada em</th>
+                  <th scope="col">Revisão</th>
                 </tr>
               </thead>
               <tbody>
                 {data.issues.map((i, n) => (
-                  <tr key={`${i.reference}-${i.kind}-${n}`}>
+                  <tr key={`${i.id}-${n}`}>
                     <td>
                       <ToneBadge tone={TIPOS[i.kind].tone}>{TIPOS[i.kind].rotulo}</ToneBadge>
                       <p className="muted table__hint">{TIPOS[i.kind].explicacao}</p>
@@ -136,6 +214,7 @@ export function FinancePage() {
                     </td>
                     <td className="table__num">{formatCents(i.amountCents)}</td>
                     <td>{formatDateTime(i.detectedAt)}</td>
+                    <ReviewCell issue={i} onSaved={load} />
                   </tr>
                 ))}
               </tbody>

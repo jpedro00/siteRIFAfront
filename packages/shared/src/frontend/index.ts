@@ -6,3 +6,5 @@ export * from './apiBaseUrl.js';
 export * from './orderReference.js';
 export * from './phone.js';
 export * from './sales.js';
+export * from './media.js';
+export * from './color.js';

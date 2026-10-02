@@ -267,3 +267,45 @@ describe('validacao por passo e checklist de envio', () => {
     expect(submissionProblems(emptyForm()).length).toBeGreaterThan(3);
   });
 });
+
+describe('personalizacao ampliada e imagens enviadas', () => {
+  it('o pedido carrega banner, cor, contador, compradores e limites por pedido', () => {
+    const f = completo({
+      bannerUrl: '/api/public/media/11111111-1111-4111-8111-111111111111',
+      accentColor: '#16a34a',
+      showCountdown: true,
+      showBuyers: true,
+      minPerOrder: '2',
+      maxPerOrder: '10',
+    });
+    const req = buildCreateRequest(f);
+    expect(req?.customization).toMatchObject({
+      bannerUrl: '/api/public/media/11111111-1111-4111-8111-111111111111',
+      accentColor: '#16a34a',
+      showCountdown: true,
+      showBuyers: true,
+      minPerOrder: 2,
+      maxPerOrder: 10,
+    });
+  });
+
+  it('sem ajuste nenhum, nao manda personalizacao', () => {
+    expect(buildCreateRequest(completo())?.customization).toBeUndefined();
+  });
+
+  it('minimo maior que o maximo e valor fora de 1..100 sao apontados no passo de preco', () => {
+    const campos = (f: DrawForm) => stepProblems(3, f).map((p) => p.field);
+    expect(campos(completo({ minPerOrder: '5', maxPerOrder: '2' }))).toContain('minPerOrder');
+    expect(campos(completo({ maxPerOrder: '500' }))).toContain('maxPerOrder');
+    expect(campos(completo({ minPerOrder: '1', maxPerOrder: '10' }))).toEqual([]);
+  });
+
+  it('foto de premio: aceita imagem enviada e https; recusa o resto', () => {
+    const problemas = (imageUrl: string) =>
+      stepProblems(1, completo({ prizes: [{ ...emptyPrize(), name: 'Moto', imageUrl }] })).map((p) => p.field);
+    expect(problemas('/api/public/media/11111111-1111-4111-8111-111111111111')).toEqual([]);
+    expect(problemas('https://cdn.exemplo/moto.jpg')).toEqual([]);
+    expect(problemas('http://cdn.exemplo/moto.jpg')).toContain('prize-0-image');
+    expect(problemas('javascript:alert(1)')).toContain('prize-0-image');
+  });
+});

@@ -51,6 +51,15 @@ export interface DrawForm {
   progressMode: ProgressMode;
   headline: string;
   ctaLabel: string;
+  /** Imagem enviada ou link https; vazio = sem banner. */
+  bannerUrl: string;
+  /** `#RRGGBB`; vazio = cor padrao da comunidade. */
+  accentColor: string;
+  showCountdown: boolean;
+  showBuyers: boolean;
+  /** Texto inteiro ("1".."100"); vazio = sem limite. */
+  minPerOrder: string;
+  maxPerOrder: string;
   regulation: string;
 }
 
@@ -79,6 +88,12 @@ export function emptyForm(): DrawForm {
     progressMode: DEFAULT_PROGRESS_MODE,
     headline: '',
     ctaLabel: '',
+    bannerUrl: '',
+    accentColor: '',
+    showCountdown: false,
+    showBuyers: false,
+    minPerOrder: '',
+    maxPerOrder: '',
     regulation: '',
   };
 }
@@ -170,6 +185,12 @@ export function formFromDraw(draw: OrganizerDraw, options: { duplicate?: boolean
     progressMode: draw.customization.progressMode,
     headline: draw.customization.headline ?? '',
     ctaLabel: draw.customization.ctaLabel ?? '',
+    bannerUrl: draw.customization.bannerUrl ?? '',
+    accentColor: draw.customization.accentColor ?? '',
+    showCountdown: draw.customization.showCountdown,
+    showBuyers: draw.customization.showBuyers,
+    minPerOrder: draw.customization.minPerOrder > 1 ? String(draw.customization.minPerOrder) : '',
+    maxPerOrder: draw.customization.maxPerOrder === null ? '' : String(draw.customization.maxPerOrder),
     regulation: draw.regulation ?? '',
   };
 }
@@ -203,11 +224,29 @@ function prizePayload(form: DrawForm): CreateDrawRequest['prizes'] | null {
   return saida;
 }
 
+/** "3" -> 3; vazio ou fora de 1..100 -> null. */
+export function inteiroOuNulo(v: string): number | null {
+  const t = v.trim();
+  if (!/^[0-9]{1,3}$/.test(t)) return null;
+  const n = Number(t);
+  return n >= 1 && n <= 100 ? n : null;
+}
+
+/** Imagem valida no contrato: enviada pelo painel ou link https. */
+export const isImageRef = (v: string): boolean =>
+  v.trim().startsWith("/api/public/media/") || v.trim().toLowerCase().startsWith("https://");
+
 function customizationPayload(form: DrawForm) {
   const c = {
     ...(form.progressMode !== DEFAULT_PROGRESS_MODE ? { progressMode: form.progressMode } : {}),
     ...(texto(form.headline) ? { headline: texto(form.headline)! } : {}),
     ...(texto(form.ctaLabel) ? { ctaLabel: texto(form.ctaLabel)! } : {}),
+    ...(texto(form.bannerUrl) ? { bannerUrl: texto(form.bannerUrl)! } : {}),
+    ...(texto(form.accentColor) ? { accentColor: texto(form.accentColor)! } : {}),
+    ...(form.showCountdown ? { showCountdown: true } : {}),
+    ...(form.showBuyers ? { showBuyers: true } : {}),
+    ...(inteiroOuNulo(form.minPerOrder) ? { minPerOrder: inteiroOuNulo(form.minPerOrder)! } : {}),
+    ...(inteiroOuNulo(form.maxPerOrder) ? { maxPerOrder: inteiroOuNulo(form.maxPerOrder)! } : {}),
   };
   return c;
 }
@@ -361,8 +400,8 @@ export function stepProblems(step: StepIndex, form: DrawForm): StepProblem[] {
       form.prizes.forEach((pr, i) => {
         if (!filledPrizes(form).includes(pr)) return;
         if (pr.name.trim().length < 2) p.push({ field: `prize-${i}-name`, message: 'Informe o nome do prêmio.' });
-        if (pr.imageUrl.trim() !== '' && !pr.imageUrl.trim().toLowerCase().startsWith('https://')) {
-          p.push({ field: `prize-${i}-image`, message: 'O endereço da foto precisa começar com https://.' });
+        if (pr.imageUrl.trim() !== '' && !isImageRef(pr.imageUrl)) {
+          p.push({ field: `prize-${i}-image`, message: 'Envie a foto do prêmio novamente.' });
         }
         if (pr.value.trim() !== '' && parseMoneyToCents(pr.value) === null) {
           p.push({ field: `prize-${i}-value`, message: 'Use um valor como 2.500,00.' });
@@ -372,6 +411,14 @@ export function stepProblems(step: StepIndex, form: DrawForm): StepProblem[] {
     }
     case 3: {
       if (parseMoneyToCents(form.price) === null) p.push({ field: 'price', message: 'Informe um valor maior que zero, como 15,00.' });
+      for (const [campo, rotulo] of [['minPerOrder', 'mínimo'], ['maxPerOrder', 'máximo']] as const) {
+        if (form[campo].trim() !== '' && inteiroOuNulo(form[campo]) === null) {
+          p.push({ field: campo, message: `Use um ${rotulo} entre 1 e 100.` });
+        }
+      }
+      if (inteiroOuNulo(form.minPerOrder) && inteiroOuNulo(form.maxPerOrder) && inteiroOuNulo(form.minPerOrder)! > inteiroOuNulo(form.maxPerOrder)!) {
+        p.push({ field: 'minPerOrder', message: 'O mínimo não pode passar do máximo.' });
+      }
       const cheio = parseMoneyToCents(form.price);
       const promo = parseMoneyToCents(form.promoPrice);
       if ((form.promoPrice.trim() !== '') !== (form.promoUntil.trim() !== '')) {
@@ -406,7 +453,7 @@ export function stepProblems(step: StepIndex, form: DrawForm): StepProblem[] {
 }
 
 /** Erros de FORMATO que o contrato compartilhado nao cobre (a API os recusa na gravacao). */
-const SO_DE_FORMATO = /^(prize-\d+-(image|value)|thresholds|subtitle|category)$/;
+const SO_DE_FORMATO = /^(prize-\d+-(image|value)|thresholds|subtitle|category|minPerOrder|maxPerOrder)$/;
 
 /**
  * O checklist do passo 9: os MESMOS criterios que a API aplica no envio (funcao compartilhada)

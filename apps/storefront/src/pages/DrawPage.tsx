@@ -26,6 +26,9 @@ import { useApiPolling } from '../hooks/useApiPolling.ts';
 import { useDocumentMeta } from '../hooks/useDocumentMeta.ts';
 import { saveReservation } from '../lib/reservationStore.ts';
 import { api } from '../api.ts';
+import { accentStyle, imageSrc as imagem } from '../lib/brand.ts';
+import { Countdown } from '../components/Countdown.tsx';
+import { RecentBuyers } from '../components/RecentBuyers.tsx';
 import type { CellState } from '../components/NumberCell.tsx';
 
 /**
@@ -67,11 +70,13 @@ export function DrawPage() {
   );
 
   const drawId = sorteio.data?.id ?? null;
+  const limiteMax = Math.min(MAX_SELECAO, sorteio.data?.customization.maxPerOrder ?? MAX_SELECAO);
+  const limiteMin = sorteio.data?.customization.minPerOrder ?? 1;
 
   useDocumentMeta({
     title: sorteio.data ? `${sorteio.data.prizeName} · ${sorteio.data.title}` : 'Sorteio',
     description: sorteio.data?.description ?? null,
-    image: sorteio.data?.prizes[0]?.imageUrl ?? sorteio.data?.prizeImageUrl ?? null,
+    image: imagem(sorteio.data?.customization.bannerUrl ?? sorteio.data?.prizes[0]?.imageUrl ?? sorteio.data?.prizeImageUrl ?? null),
   });
 
   // A grade acompanha as OUTRAS pessoas: consulta a cada 3 s, revalidando com o ETag da
@@ -137,15 +142,15 @@ export function DrawPage() {
           proximo.delete(valor);
           return proximo;
         }
-        if (proximo.size >= MAX_SELECAO) {
-          setErroReserva(`Você pode escolher até ${MAX_SELECAO} números por compra.`);
+        if (proximo.size >= limiteMax) {
+          setErroReserva(`Você pode escolher até ${limiteMax} números por compra.`);
           return anterior;
         }
         proximo.add(valor);
         return proximo;
       });
     },
-    [],
+    [limiteMax],
   );
 
   const adicionarVarios = useCallback((valores: number[]) => {
@@ -153,12 +158,12 @@ export function DrawPage() {
     setSelecionados((anterior) => {
       const proximo = new Set(anterior);
       for (const valor of valores) {
-        if (proximo.size >= MAX_SELECAO) break;
+        if (proximo.size >= limiteMax) break;
         proximo.add(valor);
       }
       return proximo;
     });
-  }, []);
+  }, [limiteMax]);
 
   const limpar = useCallback(() => {
     setErroReserva(null);
@@ -172,6 +177,10 @@ export function DrawPage() {
 
   const reservar = useCallback(async () => {
     if (!sorteio.data || ordenados.length === 0) return;
+    if (ordenados.length < limiteMin) {
+      setErroReserva(`Escolha ao menos ${limiteMin} números neste sorteio.`);
+      return;
+    }
 
     setReservando(true);
     setErroReserva(null);
@@ -223,7 +232,7 @@ export function DrawPage() {
     } finally {
       setReservando(false);
     }
-  }, [navigate, numeros, ordenados, sorteio.data]);
+  }, [limiteMin, navigate, numeros, ordenados, sorteio.data]);
 
   // -------------------------------------------------------------------------
   if (sorteio.status === 'loading') {
@@ -266,7 +275,7 @@ export function DrawPage() {
   const esgotado = disponiveis === 0;
 
   return (
-    <div className="container page draw-page">
+    <div className="container page draw-page" style={accentStyle(draw.customization.accentColor)}>
       <Link className="back-link" to="/sorteios">
         <ArrowLeft size={16} aria-hidden="true" />
         Todos os sorteios
@@ -275,6 +284,9 @@ export function DrawPage() {
       <div className="draw-layout">
         {/* ----------------------------------------------------------- */}
         <div className="draw-layout__main stack stack--lg">
+          {imagem(draw.customization.bannerUrl) && (
+            <img className="draw-banner" src={imagem(draw.customization.bannerUrl)!} alt="" />
+          )}
           <PrizeGallery prizes={draw.prizes} fallbackName={draw.prizeName} />
 
           <header className="stack stack--sm">
@@ -303,6 +315,8 @@ export function DrawPage() {
           {/* RN29: regulamento, preco total e prazo da reserva ficam SEMPRE visiveis. O
               regulamento e o texto proprio do sorteio; sorteios antigos, sem ele, mostram a
               descricao. */}
+          {draw.customization.showBuyers && <RecentBuyers slug={draw.slug} />}
+
           <section className="prose" aria-labelledby="regulamento" id="regulamento">
             <h2 id="regulamento-titulo" className="prose__title">
               <FileText size={18} aria-hidden="true" />
@@ -390,8 +404,13 @@ export function DrawPage() {
                 vendido.
               </li>
               <li>
-                Você pode escolher até <strong>{MAX_SELECAO} números</strong> por compra.
+                Você pode escolher até <strong>{limiteMax} números</strong> por compra.
               </li>
+              {limiteMin > 1 && (
+                <li>
+                  A compra mínima é de <strong>{limiteMin} números</strong>.
+                </li>
+              )}
             </ul>
           </section>
         </div>
@@ -399,6 +418,7 @@ export function DrawPage() {
         {/* ----------------------------------------------------------- */}
         <aside className="draw-layout__aside">
           <div className="buy-panel">
+            {draw.customization.showCountdown && vendendo && draw.closeAt && <Countdown until={draw.closeAt} />}
             <div className="buy-panel__price">
               <span className="buy-panel__price-label">Cada número por</span>
               <strong className="buy-panel__price-value">{formatCents(draw.unitPriceCents)}</strong>
@@ -477,7 +497,7 @@ export function DrawPage() {
             <button
               type="button"
               className="btn btn--primary btn--lg btn--block"
-              disabled={!vendendo || esgotado || ordenados.length === 0 || reservando}
+              disabled={!vendendo || esgotado || ordenados.length < Math.max(1, limiteMin) || reservando}
               onClick={() => void reservar()}
             >
               {reservando ? <span className="btn__spinner" aria-hidden="true" /> : null}
@@ -485,7 +505,9 @@ export function DrawPage() {
                 ? 'Reservando…'
                 : ordenados.length === 0
                   ? 'Escolha seus números'
-                  : draw.customization.ctaLabel
+                  : ordenados.length < limiteMin
+                    ? `Escolha ao menos ${limiteMin} números`
+                    : draw.customization.ctaLabel
                     ? `${draw.customization.ctaLabel} (${ordenados.length})`
                     : `Reservar ${ordenados.length} ${ordenados.length === 1 ? 'número' : 'números'}`}
             </button>
@@ -534,7 +556,7 @@ export function DrawPage() {
             onToggle={alternar}
             onSelectMany={adicionarVarios}
             onClear={limpar}
-            maxSelection={MAX_SELECAO}
+            maxSelection={limiteMax}
             disabled={!vendendo}
           />
         )}
@@ -548,7 +570,7 @@ export function DrawPage() {
         onClear={limpar}
         onSubmit={() => void reservar()}
         submitting={reservando}
-        disabled={!vendendo || esgotado}
+        disabled={!vendendo || esgotado || ordenados.length < limiteMin}
       />
     </div>
   );

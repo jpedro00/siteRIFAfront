@@ -12,6 +12,8 @@ import { OrderPage } from './pages/OrderPage.tsx';
 import { ResultPage } from './pages/ResultPage.tsx';
 import { AccountPage } from './pages/AccountPage.tsx';
 import { RegisterPage } from './pages/RegisterPage.tsx';
+import { InstitutionalPage } from './pages/InstitutionalPage.tsx';
+import { accentStyle } from './lib/brand.ts';
 
 /**
  * Vitrine da comunidade.
@@ -66,7 +68,7 @@ function Shell() {
   }
 
   return (
-    <div className="site">
+    <div className="site" style={accentStyle(tenant.colors['primary'])}>
       <ScrollToTop />
 
       <a className="skip-link" href="#conteudo">
@@ -85,6 +87,7 @@ function Shell() {
           <Route path="/pedido/:id" element={<OrderPage />} />
           <Route path="/conta" element={<AccountPage />} />
           <Route path="/cadastro" element={<RegisterPage />} />
+          <Route path="/p/:key" element={<InstitutionalPage />} />
           <Route
             path="*"
             element={

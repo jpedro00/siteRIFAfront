@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Prize } from '@clubedarifa/shared';
 import { PrizeImage } from './PrizeImage.tsx';
+import { imageSrc } from '../lib/brand.ts';
 
 /**
  * Galeria dos premios do sorteio.
@@ -36,7 +37,7 @@ export function PrizeGallery({ prizes, fallbackName }: { prizes: readonly Prize[
                   aria-pressed={i === indice}
                   onClick={() => setIndice(i)}
                 >
-                  {p.imageUrl ? <img src={p.imageUrl} alt="" loading="lazy" /> : <span aria-hidden="true">{p.position}º</span>}
+                  {imageSrc(p.imageUrl) ? <img src={imageSrc(p.imageUrl)!} alt="" loading="lazy" /> : <span aria-hidden="true">{p.position}º</span>}
                 </button>
               </li>
             ))}

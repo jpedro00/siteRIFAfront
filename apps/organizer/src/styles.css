@@ -591,3 +591,12 @@ fieldset.field { border: 0; padding: 0; margin: 0; }
 .method.is-enabled .method__icon { color: var(--success-text); }
 .method__name { margin: 0; font-weight: var(--weight-semibold); display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
 .method__text p { margin: 0; }
+
+/* Envio de imagem, cor e caixas de marcacao */
+.uploader { display: flex; gap: var(--space-4); align-items: center; flex-wrap: wrap; }
+.uploader__preview { display: grid; place-items: center; width: 7rem; height: 7rem; border: 1px dashed var(--border); border-radius: var(--radius-md); background: var(--surface-sunken); color: var(--text-muted); overflow: hidden; flex: none; }
+.uploader--wide .uploader__preview { width: 14rem; height: 6rem; }
+.uploader__preview img { width: 100%; height: 100%; object-fit: cover; }
+.uploader__actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.uploader__input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.color-input { width: 3rem; height: 2.25rem; padding: 0; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); }
