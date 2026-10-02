@@ -1,11 +1,16 @@
 import { Link, Route, Routes } from 'react-router-dom';
-import { Building2 } from 'lucide-react';
+import { Activity, Banknote, Building2, ClipboardCheck, CreditCard, Layers } from 'lucide-react';
 import { SessionProvider, useSession } from './state/SessionProvider.tsx';
 import { AuthGate } from './pages/AuthGate.tsx';
 import { AdminShell, type AdminNavItem } from './components/AdminShell.tsx';
 import { ScrollToTop } from './components/ScrollToTop.tsx';
 import { AccessDenied, NotFoundState } from './components/States.tsx';
 import { TenantsPage } from './pages/TenantsPage.tsx';
+import { HealthPage } from './pages/HealthPage.tsx';
+import { ReviewQueuePage } from './pages/ReviewQueuePage.tsx';
+import { PlansPage } from './pages/PlansPage.tsx';
+import { SubscriptionsPage } from './pages/SubscriptionsPage.tsx';
+import { FinancePage } from './pages/FinancePage.tsx';
 
 /**
  * Console Super Admin.
@@ -14,7 +19,7 @@ import { TenantsPage } from './pages/TenantsPage.tsx';
  * API. Um sub-perfil so ve as areas que o DOC-01 secao 17 lhe atribui —
  * nenhum sub-perfil recebe tudo.
  *
- * As areas ainda inexistentes (revisao, risco, cobrancas, saude) sairam do
+ * As areas ainda inexistentes (risco, cobrancas, saude) sairam do
  * menu. Elas nao tem rota no backend, e um item desabilitado com o nome de
  * uma fase futura nao ajuda quem opera: informa apenas que o console nao esta
  * pronto. Voltam ao menu quando tiverem o que mostrar.
@@ -25,6 +30,36 @@ const NAV: AdminNavItem[] = [
     label: 'Comunidades',
     icon: <Building2 size={17} aria-hidden="true" />,
     permission: 'platform:tenant:read',
+  },
+  {
+    to: '/revisao',
+    label: 'Fila de revisão',
+    icon: <ClipboardCheck size={17} aria-hidden="true" />,
+    permission: 'platform:review:read',
+  },
+  {
+    to: '/planos',
+    label: 'Planos',
+    icon: <Layers size={17} aria-hidden="true" />,
+    permission: 'platform:billing:read',
+  },
+  {
+    to: '/assinaturas',
+    label: 'Assinaturas',
+    icon: <CreditCard size={17} aria-hidden="true" />,
+    permission: 'platform:billing:read',
+  },
+  {
+    to: '/financeiro',
+    label: 'Financeiro',
+    icon: <Banknote size={17} aria-hidden="true" />,
+    permission: 'platform:billing:read',
+  },
+  {
+    to: '/saude',
+    label: 'Saúde',
+    icon: <Activity size={17} aria-hidden="true" />,
+    permission: 'platform:health:read',
   },
 ];
 
@@ -44,6 +79,56 @@ function Shell() {
               <TenantsPage />
             ) : (
               <AccessDenied message="Seu perfil de Super Admin não inclui a leitura de comunidades." />
+            )
+          }
+        />
+        <Route
+          path="/revisao"
+          element={
+            can('platform:review:read') ? (
+              <ReviewQueuePage />
+            ) : (
+              <AccessDenied message="Seu perfil de Super Admin não inclui a revisão de sorteios." />
+            )
+          }
+        />
+        <Route
+          path="/planos"
+          element={
+            can('platform:billing:read') ? (
+              <PlansPage />
+            ) : (
+              <AccessDenied message="Seu perfil de Super Admin não inclui o catálogo de planos." />
+            )
+          }
+        />
+        <Route
+          path="/assinaturas"
+          element={
+            can('platform:billing:read') ? (
+              <SubscriptionsPage />
+            ) : (
+              <AccessDenied message="Seu perfil de Super Admin não inclui a consulta de assinaturas." />
+            )
+          }
+        />
+        <Route
+          path="/financeiro"
+          element={
+            can('platform:billing:read') ? (
+              <FinancePage />
+            ) : (
+              <AccessDenied message="Seu perfil de Super Admin não inclui o financeiro da plataforma." />
+            )
+          }
+        />
+        <Route
+          path="/saude"
+          element={
+            can('platform:health:read') ? (
+              <HealthPage />
+            ) : (
+              <AccessDenied message="Seu perfil de Super Admin não inclui a leitura da saúde da plataforma." />
             )
           }
         />

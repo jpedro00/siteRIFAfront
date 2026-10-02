@@ -3,27 +3,36 @@ import { Link, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
   BadgeDollarSign,
+  Copy,
+  Pencil,
   CalendarDays,
   ExternalLink,
   Hash,
   Pause,
   Play,
+  Send,
   Square,
   Ticket,
   Timer,
 } from 'lucide-react';
 import {
-  ApiClientError,
   formatCents,
   formatCentsCompact,
   formatDateTime,
   formatInteger,
   formatNumberLabel,
+  labelDigitsForGridSize,
+  ORGANIZER_DRAW_TRANSITIONS,
   percentOf,
   storefrontDrawUrl,
-  type DrawStatusPhase2,
+  type DrawStatus,
   type OrganizerDraw,
 } from '@clubedarifa/shared';
+import { BuyersSection } from '../components/BuyersSection.tsx';
+import { EntitlementNotice } from '../components/BillingUi.tsx';
+import { EntitlementSummary } from '../components/EntitlementSummary.tsx';
+import { describeEntitlementError } from '../lib/billingCopy.ts';
+import { ResultSection } from '../components/ResultSection.tsx';
 import { ErrorPanel, MetricCard, MetricsSkeleton, PageHeader, StatusBadge } from '../components/Ui.tsx';
 import { useApiResource } from '../hooks/useApiResource.ts';
 import { useSession } from '../state/SessionProvider.tsx';
@@ -34,42 +43,41 @@ import { api } from '../api.ts';
  *
  * TRANSICOES
  * ----------
- * Os botoes espelham a maquina de estados do servico — RASCUNHO abre;
- * ATIVA pausa ou encerra; PAUSADA reabre ou encerra; ENCERRADA nao volta. A
- * lista aqui evita oferecer um caminho que a API vai recusar, mas quem decide
- * continua sendo o backend: esconder botao nao e regra de negocio.
+ * Os botoes espelham `ORGANIZER_DRAW_TRANSITIONS`, do pacote compartilhado — a
+ * MESMA tabela que a API aplica. RASCUNHO nao "abre vendas": ele vai para
+ * revisao, e quem aprova e a plataforma (RN02). ATIVA pausa ou encerra; PAUSADA
+ * retoma ou encerra. A lista aqui evita oferecer um caminho que a API vai
+ * recusar, mas quem decide continua sendo o backend: esconder botao nao e regra
+ * de negocio.
  *
  * Encerrar vendas e IRREVERSIVEL, entao pede confirmacao. A confirmacao e um
  * painel na propria tela, nao `window.confirm` — o dialogo nativo nao recebe
  * estilo, nao explica a consequencia e trava a aba.
  */
-const ACOES: Record<
-  DrawStatusPhase2,
-  { status: 'ATIVA' | 'PAUSADA' | 'VENDAS ENCERRADAS'; rotulo: string; icone: typeof Play; variante: string }[]
+type StatusOrganizador = keyof typeof ORGANIZER_DRAW_TRANSITIONS;
+
+const ROTULOS_ACAO: Partial<
+  Record<DrawStatus, { rotulo: string; icone: typeof Play; variante: string }>
 > = {
-  RASCUNHO: [
-    { status: 'ATIVA', rotulo: 'Abrir vendas', icone: Play, variante: 'btn--primary' },
-  ],
-  ATIVA: [
-    { status: 'PAUSADA', rotulo: 'Pausar vendas', icone: Pause, variante: 'btn--secondary' },
-    {
-      status: 'VENDAS ENCERRADAS',
-      rotulo: 'Encerrar vendas',
-      icone: Square,
-      variante: 'btn--danger-ghost',
-    },
-  ],
-  PAUSADA: [
-    { status: 'ATIVA', rotulo: 'Retomar vendas', icone: Play, variante: 'btn--primary' },
-    {
-      status: 'VENDAS ENCERRADAS',
-      rotulo: 'Encerrar vendas',
-      icone: Square,
-      variante: 'btn--danger-ghost',
-    },
-  ],
-  'VENDAS ENCERRADAS': [],
+  'REVISÃO COMPLIANCE': { rotulo: 'Enviar para revisão', icone: Send, variante: 'btn--primary' },
+  ATIVA: { rotulo: 'Retomar vendas', icone: Play, variante: 'btn--primary' },
+  PAUSADA: { rotulo: 'Pausar vendas', icone: Pause, variante: 'btn--secondary' },
+  'VENDAS ENCERRADAS': { rotulo: 'Encerrar vendas', icone: Square, variante: 'btn--danger-ghost' },
 };
+
+/** Estados em que o sorteio ainda nao esta publicado na vitrine. */
+const SEM_VITRINE: readonly DrawStatus[] = ['RASCUNHO', 'REVISÃO COMPLIANCE', 'AGENDADA'];
+
+function acoesPara(de: DrawStatus) {
+  const destinos = ORGANIZER_DRAW_TRANSITIONS[de as StatusOrganizador] ?? [];
+  return destinos.flatMap((status) => {
+    const info = ROTULOS_ACAO[status];
+    if (!info) return [];
+    // ATIVA a partir de PAUSADA e "retomar"; nunca aparece a partir de RASCUNHO,
+    // porque a tabela compartilhada nao a oferece ali.
+    return [{ status, ...info }];
+  });
+}
 
 export function DrawDetailPage() {
   const { id = '' } = useParams<{ id: string }>();
@@ -77,6 +85,8 @@ export function DrawDetailPage() {
 
   const [alterando, setAlterando] = useState(false);
   const [erroAcao, setErroAcao] = useState<string | null>(null);
+  // Limite do plano ou assinatura: a API recusou; a tela explica e oferece "Minha assinatura".
+  const [erroOfereceAssinatura, setErroOfereceAssinatura] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
 
   const sorteio = useApiResource<OrganizerDraw>(
@@ -93,20 +103,19 @@ export function DrawDetailPage() {
   );
 
   const mudarStatus = useCallback(
-    async (status: 'ATIVA' | 'PAUSADA' | 'VENDAS ENCERRADAS') => {
+    async (status: DrawStatus) => {
       setAlterando(true);
       setErroAcao(null);
+      setErroOfereceAssinatura(false);
       try {
         await api.call('updateDrawStatus', { status }, { params: { id } });
         setConfirmando(false);
         sorteio.reload();
         numeros.reload();
       } catch (falha) {
-        setErroAcao(
-          falha instanceof ApiClientError
-            ? falha.message
-            : 'Não foi possível alterar a situação do sorteio.',
-        );
+        const descricao = describeEntitlementError(falha, 'Não foi possível alterar a situação do sorteio.');
+        setErroAcao(descricao.message);
+        setErroOfereceAssinatura(descricao.offerSubscription);
       } finally {
         setAlterando(false);
       }
@@ -131,7 +140,7 @@ export function DrawDetailPage() {
   const percentual = percentOf(draw.paidCount, draw.totalNumbers);
   const disponiveis = Math.max(0, draw.totalNumbers - draw.takenCount);
   const dataSorteio = formatDateTime(draw.drawDate);
-  const acoes = can('draw:lifecycle:write') ? ACOES[draw.status] : [];
+  const acoes = can('draw:lifecycle:write') ? acoesPara(draw.status) : [];
 
   // A base da vitrine e CONFIGURACAO, nao codigo: cada instalacao tem o
   // proprio dominio. A montagem e validacao moram em `@clubedarifa/shared` e
@@ -154,6 +163,18 @@ export function DrawDetailPage() {
         badge={<StatusBadge status={draw.status} />}
         actions={
           <>
+            {draw.status === 'RASCUNHO' && can('draw:write') && (
+              <Link className="btn btn--secondary" to={`/sorteios/${draw.id}/editar`}>
+                <Pencil size={16} aria-hidden="true" />
+                Editar rascunho
+              </Link>
+            )}
+            {can('draw:write') && (
+              <Link className="btn btn--ghost" to={`/sorteios/novo?duplicar=${draw.id}`}>
+                <Copy size={16} aria-hidden="true" />
+                Duplicar
+              </Link>
+            )}
             {acoes.map((acao) => {
               const Icone = acao.icone;
               const encerrar = acao.status === 'VENDAS ENCERRADAS';
@@ -185,9 +206,9 @@ export function DrawDetailPage() {
               maquina de quem desenvolve e morreria no cliente, que e o pior
               jeito de falhar, porque passa pelo teste manual.
 
-              Rascunho tambem nao mostra: ele nao esta publicado.
+              Rascunho, revisao e agendada tambem nao mostram: nao estao publicados.
             */}
-            {draw.status !== 'RASCUNHO' && urlVitrine !== null && (
+            {!SEM_VITRINE.includes(draw.status) && urlVitrine !== null && (
               <a
                 className="btn btn--ghost"
                 href={urlVitrine}
@@ -236,7 +257,24 @@ export function DrawDetailPage() {
         </div>
       )}
 
-      {erroAcao && (
+      {draw.status === 'REVISÃO COMPLIANCE' && (
+        <div className="alert alert--warning" role="status">
+          <div className="alert__body stack stack--sm">
+            <p className="alert__title">Aguardando revisão da plataforma</p>
+            <p>
+              O sorteio foi enviado e não pode ser alterado até a decisão. Se for reprovado, ele
+              volta a rascunho para você corrigir e enviar de novo.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {draw.status === 'RASCUNHO' && <EntitlementSummary kind="draws" />}
+
+      {erroAcao && erroOfereceAssinatura && (
+        <EntitlementNotice message={erroAcao} offerSubscription canOpenSubscription={can('billing:read')} />
+      )}
+      {erroAcao && !erroOfereceAssinatura && (
         <div className="alert alert--danger" role="alert">
           <div className="alert__body">{erroAcao}</div>
         </div>
@@ -421,6 +459,18 @@ export function DrawDetailPage() {
           </div>
         )}
       </section>
+
+      <ResultSection
+        drawId={id}
+        status={draw.status}
+        onChanged={() => {
+          sorteio.reload();
+        }}
+      />
+
+      {can('payment:read:status') && (
+        <BuyersSection drawId={id} labelDigits={labelDigitsForGridSize(draw.totalNumbers)} />
+      )}
     </>
   );
 }

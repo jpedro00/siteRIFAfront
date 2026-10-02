@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { formatCents, type PublicDrawSummary } from '@clubedarifa/shared';
 import { PrizeImage } from './PrizeImage.tsx';
+import { PromoNote } from './PromoNote.tsx';
 import { ProgressBar } from './ProgressBar.tsx';
 import { StatusBadge } from './StatusBadge.tsx';
 
@@ -24,6 +25,7 @@ export function DrawCard({ draw }: { draw: PublicDrawSummary }) {
           <StatusBadge status={draw.status} />
           <span className="draw-card__price">{formatCents(draw.unitPriceCents)}</span>
         </div>
+        <PromoNote draw={draw} />
 
         <h3 className="draw-card__title">
           <Link className="draw-card__link" to={`/sorteio/${draw.slug}`}>

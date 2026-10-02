@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, BadgeCheck, Lock, Timer } from 'lucide-react';
 import { formatCents, formatInteger, type PublicDrawSummary } from '@clubedarifa/shared';
 import { PrizeImage } from './PrizeImage.tsx';
+import { PromoNote } from './PromoNote.tsx';
 import { ProgressBar } from './ProgressBar.tsx';
 import { StatusBadge, isBuyable } from './StatusBadge.tsx';
 
@@ -42,6 +43,7 @@ export function DrawHero({ draw }: { draw: PublicDrawSummary }) {
         <div className="hero__price">
           <span className="hero__price-label">Cada número por</span>
           <strong className="hero__price-value">{formatCents(draw.unitPriceCents)}</strong>
+          <PromoNote draw={draw} />
         </div>
 
         <ProgressBar paid={draw.paidCount} total={draw.totalNumbers} size="lg" />

@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Ticket } from 'lucide-react';
-import { formatCents, formatCentsCompact, formatDate, formatInteger, percentOf } from '@clubedarifa/shared';
+import { formatCents, formatCentsCompact, formatDate, formatInteger, percentOf, type OrganizerDraw } from '@clubedarifa/shared';
 import {
   EmptyState,
   ErrorPanel,
@@ -28,7 +29,24 @@ export function DrawsListPage() {
     [],
   );
 
-  const lista = sorteios.data?.draws ?? [];
+  // Paginas seguintes por cursor: a lista cresce por baixo, sem repetir linha.
+  const [extras, setExtras] = useState<OrganizerDraw[]>([]);
+  const [cursor, setCursor] = useState<string | null | undefined>(undefined);
+  const [carregandoMais, setCarregandoMais] = useState(false);
+  const proximo = cursor === undefined ? (sorteios.data?.nextCursor ?? null) : cursor;
+  const lista = [...(sorteios.data?.draws ?? []), ...extras];
+
+  const carregarMais = async () => {
+    if (!proximo) return;
+    setCarregandoMais(true);
+    try {
+      const r = await api.call('organizerDraws', undefined, { query: { cursor: proximo } });
+      setExtras((antes) => [...antes, ...r.draws]);
+      setCursor(r.nextCursor);
+    } finally {
+      setCarregandoMais(false);
+    }
+  };
 
   return (
     <>
@@ -114,6 +132,12 @@ export function DrawsListPage() {
             </table>
           </div>
         ))}
+
+      {proximo && (
+        <button type="button" className="btn btn--ghost" disabled={carregandoMais} onClick={() => void carregarMais()}>
+          {carregandoMais ? 'Carregando…' : 'Carregar mais'}
+        </button>
+      )}
     </>
   );
 }

@@ -46,14 +46,25 @@ function SituacaoBadge({ status }: { status: string }) {
   );
 }
 
+const ORGANIZER_BASE = (import.meta.env['VITE_ORGANIZER_BASE_URL'] as string | undefined)?.replace(/\/+$/, '');
+
+function linkConvite(token: string): string {
+  return `${ORGANIZER_BASE ?? ''}/convite/${token}`;
+}
+
 export function TenantsPage() {
   const { can } = useSession();
   const [data, setData] = useState<TenantListResponse | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
   const [criando, setCriando] = useState(false);
+  const [extras, setExtras] = useState<TenantListResponse['tenants']>([]);
+  const [cursor, setCursor] = useState<string | null | undefined>(undefined);
+  const [carregandoMais, setCarregandoMais] = useState(false);
 
   const load = useCallback(() => {
+    setExtras([]);
+    setCursor(undefined);
     setLoading(true);
     setError(null);
     api
@@ -65,7 +76,21 @@ export function TenantsPage() {
 
   useEffect(load, [load]);
 
-  const tenants = data?.tenants ?? [];
+  const tenants = [...(data?.tenants ?? []), ...extras];
+  const proximo = cursor === undefined ? (data?.nextCursor ?? null) : cursor;
+
+  const carregarMais = () => {
+    if (!proximo) return;
+    setCarregandoMais(true);
+    api
+      .call('platformTenants', undefined, { query: { cursor: proximo } })
+      .then((r) => {
+        setExtras((antes) => [...antes, ...r.tenants]);
+        setCursor(r.nextCursor);
+      })
+      .catch(setError)
+      .finally(() => setCarregandoMais(false));
+  };
 
   return (
     <>
@@ -153,6 +178,12 @@ export function TenantsPage() {
           </div>
         )
       )}
+
+      {!loading && proximo && (
+        <button type="button" className="btn btn--secondary" disabled={carregandoMais} onClick={carregarMais}>
+          {carregandoMais ? 'Carregando…' : 'Carregar mais'}
+        </button>
+      )}
     </>
   );
 }
@@ -192,15 +223,20 @@ function CreateTenantForm({ onCreated }: { onCreated: () => void }) {
   const [error, setError] = useState<unknown>(null);
   const [submitting, setSubmitting] = useState(false);
   const [created, setCreated] = useState<string | null>(null);
+  const [convite, setConvite] = useState<{ email: string; expiresAt: string; token: string } | null>(null);
+  const [copiado, setCopiado] = useState(false);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setSubmitting(true);
     setError(null);
     setCreated(null);
+    setConvite(null);
+    setCopiado(false);
     try {
       const result = await api.call('platformCreateTenant', { slug, name, ownerEmail });
       setCreated(result.slug);
+      setConvite(result.ownerInvitation);
       setSlug('');
       setName('');
       setOwnerEmail('');
@@ -241,6 +277,44 @@ function CreateTenantForm({ onCreated }: { onCreated: () => void }) {
             <div className="alert__body">
               Comunidade <code>{created}</code> criada. A marca padrão é provisionada pelo
               worker.
+            </div>
+          </div>
+        )}
+
+        {convite && (
+          <div className="alert alert--warning" role="status" style={{ marginBottom: 20 }}>
+            <AlertCircle className="alert__icon" size={18} aria-hidden="true" />
+            <div className="alert__body">
+              <p className="alert__title">Convite do dono — copie agora</p>
+              <p>
+                {convite.email} ainda não tem conta. Envie este link (vale até{' '}
+                {formatDate(convite.expiresAt) ?? convite.expiresAt}); ele não será mostrado de novo.
+              </p>
+              <input
+                className="field__input"
+                readOnly
+                aria-label="Link do convite do dono"
+                value={linkConvite(convite.token)}
+                onFocus={(e) => e.currentTarget.select()}
+              />
+              <button
+                type="button"
+                className="btn btn--secondary btn--sm"
+                onClick={() => {
+                  void navigator.clipboard
+                    .writeText(linkConvite(convite.token))
+                    .then(() => setCopiado(true))
+                    .catch(() => setCopiado(false));
+                }}
+              >
+                {copiado ? 'Copiado' : 'Copiar link'}
+              </button>
+              {!ORGANIZER_BASE && (
+                <p className="field__hint">
+                  Defina VITE_ORGANIZER_BASE_URL para o link sair completo; por ora, anteponha o endereço do painel da
+                  comunidade.
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -310,8 +384,8 @@ function CreateTenantForm({ onCreated }: { onCreated: () => void }) {
                   onChange={(event) => setOwnerEmail(event.target.value)}
                 />
                 <p className="field__hint" id="dica-owner">
-                  Precisa ser uma conta que já existe. Ela recebe o papel de dono desta
-                  comunidade — e de nenhuma outra.
+                  Conta existente vira dono na hora. Sem conta, geramos um convite de dono (link válido
+                  por 7 dias) para você enviar.
                 </p>
               </div>
             </div>

@@ -5,6 +5,7 @@ import {
   type MembershipRole,
   type TenantPermission,
 } from '@clubedarifa/shared';
+import { TeamManagement } from '../components/TeamManagement.tsx';
 import { useSession } from '../state/SessionProvider.tsx';
 
 /**
@@ -13,8 +14,7 @@ import { useSession } from '../state/SessionProvider.tsx';
  * A matriz vem de packages/shared, a MESMA fonte que o backend usa para
  * autorizar. Nao ha uma copia da tabela no frontend que possa divergir.
  *
- * Convidar e remover membros pertence a M01 e ainda nao foi construido: o
- * botao nao existe, em vez de existir e falhar.
+ * A gestao (convidar, trocar papel, remover) so aparece para `team:manage`.
  */
 const ROWS: { label: string; permission: TenantPermission }[] = [
   { label: 'Criar e editar sorteio', permission: 'draw:write' },
@@ -35,7 +35,7 @@ function has(role: MembershipRole, permission: TenantPermission): boolean {
 }
 
 export function TeamPage() {
-  const { tenant } = useSession();
+  const { tenant, can } = useSession();
   if (!tenant) return null;
 
   return (
@@ -92,11 +92,9 @@ export function TeamPage() {
             </span>
           ))}
         </p>
-        <p className="muted">
-          Convidar e remover membros ainda não foi construído. A rota correspondente não existe no
-          servidor, então nenhum botão é oferecido aqui.
-        </p>
       </section>
+
+      {can('team:manage') && <TeamManagement />}
     </>
   );
 }

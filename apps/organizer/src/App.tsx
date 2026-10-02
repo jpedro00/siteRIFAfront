@@ -1,5 +1,5 @@
-import { Link, Route, Routes } from 'react-router-dom';
-import { LayoutDashboard, ScrollText, Ticket, Users } from 'lucide-react';
+import { Link, Route, Routes, useMatch } from 'react-router-dom';
+import { CreditCard, Landmark, LayoutDashboard, Palette, ScrollText, Ticket, UserRound, Users } from 'lucide-react';
 import { SessionProvider, useSession } from './state/SessionProvider.tsx';
 import { AuthGate } from './pages/AuthGate.tsx';
 import { DashboardShell, type NavItem } from './components/DashboardShell.tsx';
@@ -7,10 +7,15 @@ import { ScrollToTop } from './components/ScrollToTop.tsx';
 import { AccessDenied, ErrorState, Loading, NotFoundState } from './components/States.tsx';
 import { DashboardPage } from './pages/DashboardPage.tsx';
 import { DrawsListPage } from './pages/DrawsListPage.tsx';
-import { NewDrawPage } from './pages/NewDrawPage.tsx';
+import { DrawWizardPage } from './pages/DrawWizardPage.tsx';
 import { DrawDetailPage } from './pages/DrawDetailPage.tsx';
 import { TeamPage } from './pages/TeamPage.tsx';
+import { InvitePage } from './pages/InvitePage.tsx';
 import { AuditPage } from './pages/AuditPage.tsx';
+import { SubscriptionPage } from './pages/SubscriptionPage.tsx';
+import { ReceiptsPage } from './pages/ReceiptsPage.tsx';
+import { CommunityPage } from './pages/CommunityPage.tsx';
+import { ClientsPage } from './pages/ClientsPage.tsx';
 
 /**
  * Painel do Organizador.
@@ -38,11 +43,37 @@ const NAV: NavItem[] = [
     permission: 'tenant:read',
   },
   {
+    to: '/clientes',
+    label: 'Clientes',
+    icon: <UserRound size={17} aria-hidden="true" />,
+    permission: 'buyer:read:full',
+  },
+  {
+    to: '/comunidade',
+    label: 'Comunidade',
+    icon: <Palette size={17} aria-hidden="true" />,
+    permission: 'tenant:read',
+    section: 'Comunidade',
+  },
+  {
     to: '/equipe',
     label: 'Equipe',
     icon: <Users size={17} aria-hidden="true" />,
     permission: 'tenant:read',
     section: 'Comunidade',
+  },
+  {
+    to: '/assinatura',
+    label: 'Minha assinatura',
+    icon: <CreditCard size={17} aria-hidden="true" />,
+    permission: 'billing:read',
+    section: 'Financeiro',
+  },
+  {
+    to: '/recebimentos',
+    label: 'Recebimentos',
+    icon: <Landmark size={17} aria-hidden="true" />,
+    permission: 'payment_account:read',
   },
   {
     to: '/auditoria',
@@ -89,14 +120,55 @@ function Shell() {
           path="/sorteios/novo"
           element={
             can('draw:write') ? (
-              <NewDrawPage />
+              <DrawWizardPage />
             ) : (
               <AccessDenied message="Seu perfil não tem permissão para criar sorteios nesta comunidade." />
             )
           }
         />
+        <Route
+          path="/sorteios/:id/editar"
+          element={
+            can('draw:write') ? (
+              <DrawWizardPage />
+            ) : (
+              <AccessDenied message="Seu perfil não tem permissão para editar sorteios nesta comunidade." />
+            )
+          }
+        />
         <Route path="/sorteios/:id" element={<DrawDetailPage />} />
         <Route path="/equipe" element={<TeamPage />} />
+        <Route path="/comunidade" element={<CommunityPage />} />
+        <Route
+          path="/clientes"
+          element={
+            can('buyer:read:full') ? (
+              <ClientsPage />
+            ) : (
+              <AccessDenied message="Seu perfil não tem permissão para ver os dados dos clientes." />
+            )
+          }
+        />
+        <Route
+          path="/assinatura"
+          element={
+            can('billing:read') ? (
+              <SubscriptionPage />
+            ) : (
+              <AccessDenied message="Seu perfil não tem permissão para ver a assinatura desta comunidade." />
+            )
+          }
+        />
+        <Route
+          path="/recebimentos"
+          element={
+            can('payment_account:read') ? (
+              <ReceiptsPage />
+            ) : (
+              <AccessDenied message="Seu perfil não tem permissão para ver os recebimentos desta comunidade." />
+            )
+          }
+        />
         <Route
           path="/auditoria"
           element={
@@ -126,11 +198,19 @@ function Shell() {
 }
 
 export function App() {
+  // O convite e a unica tela que abre ANTES de a pessoa ter vinculo com a comunidade.
+  const convite = useMatch('/convite/:token');
   return (
     <SessionProvider>
-      <AuthGate>
-        <Shell />
-      </AuthGate>
+      {convite ? (
+        <Routes>
+          <Route path="/convite/:token" element={<InvitePage />} />
+        </Routes>
+      ) : (
+        <AuthGate>
+          <Shell />
+        </AuthGate>
+      )}
     </SessionProvider>
   );
 }

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { LogIn, Menu, Ticket, User, X } from 'lucide-react';
+import { imageSrc } from '../lib/brand.ts';
 import { initialsOf } from '@clubedarifa/shared';
 import { useStorefront } from '../state/SessionProvider.tsx';
 
@@ -65,6 +66,7 @@ export function PublicHeader({ hasResults = false }: { hasResults?: boolean }) {
 
   const autenticado = sessionStatus === 'authenticated' && session;
   const nomeComunidade = tenant?.publicName ?? tenant?.name ?? 'Comunidade';
+  const logo = imageSrc(tenant?.logoLightUrl);
 
   const links = [
     { to: '/', rotulo: 'Início', exato: true },
@@ -76,9 +78,13 @@ export function PublicHeader({ hasResults = false }: { hasResults?: boolean }) {
     <header className={`site-header${compacto ? ' is-compact' : ''}`}>
       <div className="container site-header__inner">
         <Link className="site-header__brand" to="/">
-          <span className="site-header__mark" aria-hidden="true">
-            <Ticket size={18} />
-          </span>
+          {logo ? (
+            <img className="site-header__logo" src={logo} alt="" />
+          ) : (
+            <span className="site-header__mark" aria-hidden="true">
+              <Ticket size={18} />
+            </span>
+          )}
           <span className="site-header__name">{nomeComunidade}</span>
         </Link>
 
