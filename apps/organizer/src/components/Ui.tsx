@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
-import { ApiClientError, type DrawStatusPhase2 } from '@clubedarifa/shared';
+import { ApiClientError, type DrawStatus } from '@clubedarifa/shared';
 
 /**
  * Pecas de interface do painel.
@@ -71,14 +71,24 @@ export function MetricCard({
   );
 }
 
-const ESTADO_SORTEIO: Record<DrawStatusPhase2, { texto: string; variante: string }> = {
+/**
+ * O organizador enxerga o ciclo inteiro. O texto vem sempre escrito no selo:
+ * a cor sozinha nao pode carregar o estado (RN28).
+ */
+const ESTADO_SORTEIO: Record<DrawStatus, { texto: string; variante: string }> = {
   RASCUNHO: { texto: 'Rascunho', variante: 'badge--neutral' },
+  'REVISÃO COMPLIANCE': { texto: 'Em revisão', variante: 'badge--warning' },
+  AGENDADA: { texto: 'Agendada', variante: 'badge--neutral' },
   ATIVA: { texto: 'Ativa', variante: 'badge--success badge--live' },
   PAUSADA: { texto: 'Pausada', variante: 'badge--warning' },
   'VENDAS ENCERRADAS': { texto: 'Encerrada', variante: 'badge--neutral' },
+  APURAÇÃO: { texto: 'Em apuração', variante: 'badge--neutral' },
+  'RESULTADO PUBLICADO': { texto: 'Resultado publicado', variante: 'badge--success' },
+  ARQUIVADA: { texto: 'Arquivada', variante: 'badge--neutral' },
+  CANCELADA: { texto: 'Cancelada', variante: 'badge--danger' },
 };
 
-export function StatusBadge({ status }: { status: DrawStatusPhase2 }) {
+export function StatusBadge({ status }: { status: DrawStatus }) {
   const info = ESTADO_SORTEIO[status];
   return (
     <span className={`badge ${info.variante}`}>

@@ -18,7 +18,23 @@ export function AuditPage() {
   const [error, setError] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
 
+  const [mais, setMais] = useState<AuditListResponse['events']>([]);
+  const [cursor, setCursor] = useState<string | null | undefined>(undefined);
+
+  const carregarMais = () => {
+    if (!proximo) return;
+    api
+      .call('tenantAudit', undefined, { query: { limit: 50, cursor: proximo } })
+      .then((r) => {
+        setMais((antes) => [...antes, ...r.events]);
+        setCursor(r.nextCursor);
+      })
+      .catch(setError);
+  };
+
   const load = useCallback(() => {
+    setMais([]);
+    setCursor(undefined);
     setLoading(true);
     setError(null);
     api
@@ -33,7 +49,8 @@ export function AuditPage() {
   if (loading) return <Loading label="Carregando a trilha…" />;
   if (error) return <ErrorState error={error} onRetry={load} />;
 
-  const events = data?.events ?? [];
+  const events = [...(data?.events ?? []), ...mais];
+  const proximo = cursor === undefined ? (data?.nextCursor ?? null) : cursor;
 
   return (
     <>
@@ -80,6 +97,12 @@ export function AuditPage() {
           </table>
         )}
       </section>
+
+      {proximo && (
+        <button type="button" onClick={carregarMais}>
+          Carregar mais
+        </button>
+      )}
     </>
   );
 }

@@ -209,3 +209,17 @@ button:disabled {
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
 }
+
+/* Filtros em linha (Assinaturas) e listas simples do console. */
+.form-inline { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: flex-end; margin-bottom: var(--space-4); }
+.plain-list { list-style: none; padding: 0; display: grid; gap: var(--space-2); }
+
+/* Financeiro (conciliacao) e detalhe do sorteio na fila de revisao · DOC-01 §17 */
+.chip-row { list-style: none; padding: 0; margin: 0 0 var(--space-4); display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.table__hint { margin: var(--space-1) 0 0; font-size: var(--text-sm); max-width: 28rem; }
+.review-detail { border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-sunken); }
+.review-detail > summary { cursor: pointer; padding: var(--space-3) var(--space-4); font-weight: var(--weight-semibold); }
+.review-detail__body { padding: 0 var(--space-4) var(--space-4); }
+.review-detail__text { white-space: pre-wrap; margin: 0; padding: var(--space-3); border-radius: var(--radius-sm); background: var(--surface); border: 1px solid var(--border); max-height: 24rem; overflow: auto; overflow-wrap: anywhere; }
+.review-detail__prizes { margin: 0; padding-left: var(--space-5); display: grid; gap: var(--space-2); }
+.review-detail__sub { display: block; font-size: var(--text-sm); color: var(--text-muted); overflow-wrap: anywhere; }

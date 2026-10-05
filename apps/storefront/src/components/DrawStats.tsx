@@ -10,6 +10,7 @@ import { formatCents, formatDate, formatInteger, type PublicDrawDetail } from '@
  * perde de vez.
  */
 export function DrawStats({ draw }: { draw: PublicDrawDetail }) {
+  const ocultaProgresso = draw.customization.progressMode === 'OCULTAR';
   const dataSorteio = formatDate(draw.drawDate);
   const disponiveis = Math.max(0, draw.totalNumbers - draw.takenCount);
 
@@ -26,13 +27,18 @@ export function DrawStats({ draw }: { draw: PublicDrawDetail }) {
       valor: `${formatInteger(disponiveis)} de ${formatInteger(draw.totalNumbers)}`,
       destaque: false,
     },
-    {
-      // RN18: vendido e o que foi PAGO.
-      Icone: TrendingUp,
-      rotulo: 'Números vendidos',
-      valor: formatInteger(draw.paidCount),
-      destaque: false,
-    },
+    // O organizador pode ocultar o progresso (DOC-01 §6): o total vendido tambem some.
+    ...(ocultaProgresso
+      ? []
+      : [
+          {
+            // RN18: vendido e o que foi PAGO.
+            Icone: TrendingUp,
+            rotulo: 'Números vendidos',
+            valor: formatInteger(draw.paidCount),
+            destaque: false,
+          },
+        ]),
     ...(dataSorteio
       ? [{ Icone: CalendarDays, rotulo: 'Data do sorteio', valor: dataSorteio, destaque: false }]
       : []),

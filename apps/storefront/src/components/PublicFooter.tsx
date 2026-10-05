@@ -1,18 +1,26 @@
 import { Link } from 'react-router-dom';
-import { Ticket } from 'lucide-react';
+import { AtSign, Mail, MessageCircle, Phone, Ticket } from 'lucide-react';
+import { COMMUNITY_PAGE_LABELS } from '@clubedarifa/shared';
 import { useStorefront } from '../state/SessionProvider.tsx';
+import { instagramLink, whatsappLink } from '../lib/brand.ts';
+import { availablePages } from '../pages/InstitutionalPage.tsx';
 
 /**
  * Rodape publico.
  *
- * Deliberadamente curto. Rodape de vitrine existe para fechar a pagina e dar
- * o minimo de contexto institucional — nao para virar mapa do site com links
- * que nao levam a lugar nenhum.
+ * Mostra o que a comunidade configurou (texto do rodape, contatos, redes e paginas).
+ * Contato que nao foi preenchido nao aparece; link de rede social so se for valido.
  */
 export function PublicFooter() {
   const { tenant } = useStorefront();
   const nome = tenant?.publicName ?? tenant?.name ?? 'Comunidade';
   const ano = new Date().getFullYear();
+  const contato = tenant?.contact ?? {};
+  const whatsapp = whatsappLink(contato['whatsapp']);
+  const instagram = instagramLink(contato['instagram']);
+  const email = contato['email'];
+  const telefone = contato['phone'];
+  const paginas = availablePages(tenant?.pages);
 
   return (
     <footer className="site-footer">
@@ -23,7 +31,7 @@ export function PublicFooter() {
           </span>
           <div>
             <p className="site-footer__name">{nome}</p>
-            <p className="site-footer__tagline">Sorteios organizados com transparência.</p>
+            <p className="site-footer__tagline">{tenant?.footerText ?? 'Sorteios organizados com transparência.'}</p>
           </div>
         </div>
 
@@ -31,7 +39,43 @@ export function PublicFooter() {
           <Link to="/">Início</Link>
           <Link to="/sorteios">Sorteios</Link>
           <Link to="/conta">Minha conta</Link>
+          {paginas.map((k) => (
+            <Link key={k} to={`/p/${k}`}>
+              {COMMUNITY_PAGE_LABELS[k]}
+            </Link>
+          ))}
         </nav>
+
+        {(whatsapp || instagram || email || telefone) && (
+          <ul className="site-footer__contact" aria-label="Contato">
+            {whatsapp && (
+              <li>
+                <a href={whatsapp} target="_blank" rel="noopener noreferrer">
+                  <MessageCircle size={14} aria-hidden="true" /> WhatsApp
+                </a>
+              </li>
+            )}
+            {instagram && (
+              <li>
+                <a href={instagram} target="_blank" rel="noopener noreferrer">
+                  <AtSign size={14} aria-hidden="true" /> Instagram
+                </a>
+              </li>
+            )}
+            {email && (
+              <li>
+                <a href={`mailto:${email}`}>
+                  <Mail size={14} aria-hidden="true" /> {email}
+                </a>
+              </li>
+            )}
+            {telefone && (
+              <li>
+                <Phone size={14} aria-hidden="true" /> {telefone}
+              </li>
+            )}
+          </ul>
+        )}
 
         <p className="site-footer__legal">
           © {ano} {nome}. Participe apenas se tiver 18 anos ou mais.
