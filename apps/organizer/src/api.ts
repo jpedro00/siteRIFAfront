@@ -24,7 +24,41 @@ function readStoredSlug(): string | null {
   }
 }
 
+/**
+ * Comunidade ESCOLHIDA pelo criador (Organizer central: um dominio so para todos). Guarda so o
+ * SLUG; nunca um tenant_id. Quem decide se a pessoa pode operar nela e o servidor (vinculo).
+ */
+const SELECTED_KEY = 'selectedCommunity';
+const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
+
+export function readSelectedCommunity(): string | null {
+  try {
+    const v = window.localStorage.getItem(SELECTED_KEY);
+    return v && SLUG_RE.test(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+export function storeSelectedCommunity(slug: string | null): void {
+  try {
+    if (slug && SLUG_RE.test(slug)) window.localStorage.setItem(SELECTED_KEY, slug);
+    else window.localStorage.removeItem(SELECTED_KEY);
+  } catch {
+    /* sem memoria disponivel: a escolha vale so ate recarregar */
+  }
+}
+
 function resolveTenantSlug(): string | null {
+  // 1) `?comunidade=slug` (link vindo do onboarding); 2) escolha guardada; 3) heuristica antiga.
+  const pedida = new URLSearchParams(window.location.search).get('comunidade')?.trim().toLowerCase();
+  if (pedida && SLUG_RE.test(pedida)) {
+    storeSelectedCommunity(pedida);
+    return pedida;
+  }
+  const escolhida = readSelectedCommunity();
+  if (escolhida) return escolhida;
+
   const decision = detectTenantSlug({
     hostname: window.location.hostname,
     search: window.location.search,

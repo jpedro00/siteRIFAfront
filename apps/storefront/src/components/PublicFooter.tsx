@@ -4,6 +4,7 @@ import { COMMUNITY_PAGE_LABELS } from '@clubedarifa/shared';
 import { useStorefront } from '../state/SessionProvider.tsx';
 import { instagramLink, whatsappLink } from '../lib/brand.ts';
 import { availablePages } from '../pages/InstitutionalPage.tsx';
+import { IS_CENTRAL, PLATFORM_NAME } from '../lib/mode.ts';
 
 /**
  * Rodape publico.
@@ -13,6 +14,30 @@ import { availablePages } from '../pages/InstitutionalPage.tsx';
  */
 export function PublicFooter() {
   const { tenant } = useStorefront();
+  if (IS_CENTRAL) {
+    return (
+      <footer className="site-footer">
+        <div className="container site-footer__inner">
+          <div className="site-footer__brand">
+            <span className="site-footer__mark" aria-hidden="true">
+              <Ticket size={16} />
+            </span>
+            <div>
+              <p className="site-footer__name">{PLATFORM_NAME}</p>
+              <p className="site-footer__tagline">Rifas de criadores, com reserva segura e pagamento por PIX.</p>
+            </div>
+          </div>
+          <nav className="site-footer__nav" aria-label="Navegação do rodapé">
+            <Link to="/">Início</Link>
+            <Link to="/sorteios">Rifas</Link>
+            <Link to="/quero-criar-rifas">Quero criar rifas</Link>
+            <Link to="/conta">Minha conta</Link>
+          </nav>
+          <p className="site-footer__legal">© {new Date().getFullYear()} {PLATFORM_NAME}. Participe apenas se tiver 18 anos ou mais.</p>
+        </div>
+      </footer>
+    );
+  }
   const nome = tenant?.publicName ?? tenant?.name ?? 'Comunidade';
   const ano = new Date().getFullYear();
   const contato = tenant?.contact ?? {};

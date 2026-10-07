@@ -11,11 +11,12 @@ import {
   classifySessionFailure,
   sessionNeed,
   type LoginResponse,
+  type MembershipSummary,
   type SessionResponse,
   type TenantContextResponse,
   type TenantPermission,
 } from '@clubedarifa/shared';
-import { api } from '../api.ts';
+import { api, storeSelectedCommunity } from '../api.ts';
 
 /**
  * Estado de sessao do painel.
@@ -54,6 +55,13 @@ interface SessionState {
   logout(): Promise<void>;
   can(permission: TenantPermission): boolean;
   reloadTenant(): void;
+  /** Comunidades em que a conta tem vinculo (vem da SESSAO, nao do cliente). */
+  readonly communities: readonly MembershipSummary[];
+  /** Conta com varios vinculos e nenhuma escolha valida: o painel pede para escolher. */
+  readonly needsCommunity: boolean;
+  /** Conta autenticada sem vinculo nenhum: ainda nao e criadora de nenhuma comunidade. */
+  readonly noCommunity: boolean;
+  selectCommunity(slug: string): void;
 }
 
 const SessionContext = createContext<SessionState | null>(null);
@@ -80,6 +88,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [tenantError, setTenantError] = useState<unknown>(null);
   const [tenantLoading, setTenantLoading] = useState(false);
   const [tenantReloadToken, setTenantReloadToken] = useState(0);
+  const [chosenSlug, setChosenSlug] = useState<string | null>(() => api.tenantSlug);
+
+  const communities = useMemo(() => session?.memberships ?? [], [session]);
+  // A escolha so vale se for um vinculo REAL da sessao; com um unico vinculo, e ele.
+  const effectiveSlug = useMemo(() => {
+    if (chosenSlug && communities.some((m) => m.tenantSlug === chosenSlug)) return chosenSlug;
+    if (communities.length === 1) return communities[0]!.tenantSlug;
+    return null;
+  }, [chosenSlug, communities]);
+  const needsCommunity = status === 'authenticated' && communities.length > 1 && effectiveSlug === null;
+  const noCommunity = status === 'authenticated' && communities.length === 0;
 
   const loadSession = useCallback(async () => {
     try {
@@ -111,6 +130,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setTenantError(null);
       return;
     }
+    // Sem comunidade valida (nenhuma, ou varias sem escolha): nada a carregar ainda.
+    if (effectiveSlug === null) {
+      setTenant(null);
+      setTenantError(null);
+      return;
+    }
+    api.setTenantSlug(effectiveSlug);
 
     let cancelled = false;
     setTenantLoading(true);
@@ -134,7 +160,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [status, tenantReloadToken]);
+  }, [status, tenantReloadToken, effectiveSlug]);
 
   const value = useMemo<SessionState>(
     () => ({
@@ -181,8 +207,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       reloadTenant() {
         setTenantReloadToken((token) => token + 1);
       },
+
+      communities,
+      needsCommunity,
+      noCommunity,
+      selectCommunity(slug) {
+        storeSelectedCommunity(slug);
+        api.setTenantSlug(slug);
+        setTenant(null);
+        setChosenSlug(slug);
+      },
     }),
-    [status, session, tenant, tenantError, tenantLoading, loadSession],
+    [status, session, tenant, tenantError, tenantLoading, loadSession, communities, needsCommunity, noCommunity],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

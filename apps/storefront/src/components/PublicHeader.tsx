@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { LogIn, Menu, Ticket, User, X } from 'lucide-react';
 import { imageSrc } from '../lib/brand.ts';
+import { IS_CENTRAL, PLATFORM_NAME } from '../lib/mode.ts';
 import { initialsOf } from '@clubedarifa/shared';
 import { useStorefront } from '../state/SessionProvider.tsx';
 
@@ -65,12 +66,13 @@ export function PublicHeader({ hasResults = false }: { hasResults?: boolean }) {
   }, [menuAberto]);
 
   const autenticado = sessionStatus === 'authenticated' && session;
-  const nomeComunidade = tenant?.publicName ?? tenant?.name ?? 'Comunidade';
-  const logo = imageSrc(tenant?.logoLightUrl);
+  const nomeComunidade = IS_CENTRAL ? PLATFORM_NAME : (tenant?.publicName ?? tenant?.name ?? 'Comunidade');
+  const logo = IS_CENTRAL ? null : imageSrc(tenant?.logoLightUrl);
 
   const links = [
     { to: '/', rotulo: 'Início', exato: true },
-    { to: '/sorteios', rotulo: 'Sorteios', exato: false },
+    { to: '/sorteios', rotulo: IS_CENTRAL ? 'Rifas' : 'Sorteios', exato: false },
+    ...(IS_CENTRAL ? [{ to: '/quero-criar-rifas', rotulo: 'Quero criar rifas', exato: false }] : []),
     ...(hasResults ? [{ to: '/resultados', rotulo: 'Resultados', exato: false }] : []),
   ];
 

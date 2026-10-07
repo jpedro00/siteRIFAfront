@@ -1,12 +1,16 @@
-import { CheckCircle2, CircleSlash, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
+import { CheckCircle2, CircleSlash, Pause, Play, RefreshCw } from 'lucide-react';
 import {
+  ApiClientError,
   RESERVATION_TTL_MINUTES,
+  creatorTogglableMethods,
   type PaymentMethodAvailability,
   type PaymentMethodKind,
   type PaymentMethodReason,
 } from '@clubedarifa/shared';
 import { useApiResource } from '../hooks/useApiResource.ts';
 import { api } from '../api.ts';
+import { useSession } from '../state/SessionProvider.tsx';
 
 /**
  * Meios de pagamento da conta conectada (M05, por capacidades).
@@ -31,13 +35,32 @@ function explicacao(m: PaymentMethodAvailability): string {
     NOT_SUPPORTED_YET: m.providerReported
       ? 'A sua conta oferece, mas a plataforma ainda não habilitou este meio.'
       : 'Ainda não habilitado pela plataforma.',
+    DISABLED_BY_CREATOR: 'Pausado por você: ninguém consegue reservar números enquanto o PIX estiver pausado. Retome quando quiser vender de novo.',
     RESERVATION_WINDOW_UNDEFINED: `Desligado: o boleto leva dias para compensar e a reserva dos números dura ${RESERVATION_TTL_MINUTES} minutos. Será liberado quando houver uma regra de prazo definida.`,
   };
   return porMotivo[m.reason];
 }
 
 export function PaymentMethodsPanel() {
+  const { can } = useSession();
   const r = useApiResource((signal) => api.call('tenantPaymentMethods', undefined, { signal }), []);
+  const [alterando, setAlterando] = useState<PaymentMethodKind | null>(null);
+  const [falha, setFalha] = useState<string | null>(null);
+  const podeGerir = can('payment_account:manage');
+  const alternaveis = creatorTogglableMethods();
+
+  async function alternar(kind: PaymentMethodKind, enabled: boolean) {
+    setAlterando(kind);
+    setFalha(null);
+    try {
+      await api.call('setTenantPaymentMethod', { method: kind, enabled });
+      r.reload();
+    } catch (e) {
+      setFalha(e instanceof ApiClientError ? e.message : 'Não foi possível alterar agora. Tente novamente.');
+    } finally {
+      setAlterando(null);
+    }
+  }
 
   return (
     <section className="section" aria-labelledby="meios-titulo">
@@ -79,10 +102,26 @@ export function PaymentMethodsPanel() {
                   </span>
                 </p>
                 <p className="muted">{explicacao(m)}</p>
+                {podeGerir && alternaveis.includes(m.kind) && m.providerReported && (
+                  <button
+                    type="button"
+                    className="btn btn--secondary btn--sm"
+                    disabled={alterando !== null}
+                    onClick={() => void alternar(m.kind, !m.enabled)}
+                  >
+                    {m.enabled ? <Pause size={14} aria-hidden="true" /> : <Play size={14} aria-hidden="true" />}
+                    {m.enabled ? `Pausar ${NOME[m.kind]}` : `Retomar ${NOME[m.kind]}`}
+                  </button>
+                )}
               </div>
             </li>
           ))}
         </ul>
+      )}
+      {falha && (
+        <p className="alert alert--danger" role="alert">
+          <span className="alert__body">{falha}</span>
+        </p>
       )}
       <p className="field__hint">
         Dados de cartão nunca passam pelo nosso servidor: quando o cartão for habilitado, a digitação será feita

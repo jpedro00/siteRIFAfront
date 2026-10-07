@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { safeNext } from '../lib/next.ts';
 import { AlertCircle, LogOut, ShieldCheck } from 'lucide-react';
 import { initialsOf } from '@clubedarifa/shared';
 import { useStorefront } from '../state/SessionProvider.tsx';
@@ -22,13 +23,16 @@ import { AccountOrders } from '../components/AccountOrders.tsx';
  * entregaria o pedido a quem apenas registrou o mesmo endereco.
  */
 export function AccountPage() {
-  const { sessionStatus, session, login, verifyMfa, logout } = useStorefront();
+  const { sessionStatus, session, login, verifyMfa, enrollMfa, confirmMfa, logout } = useStorefront();
+  const [params] = useSearchParams();
+  const proximo = safeNext(params.get('next'));
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
   const [error, setError] = useState<unknown>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [enrollment, setEnrollment] = useState<{ secret: string; otpauthUri: string } | null>(null);
 
   async function handleLogin(event: FormEvent) {
     event.preventDefault();
@@ -57,10 +61,106 @@ export function AccountPage() {
     }
   }
 
+  async function handleStartEnroll() {
+    setSubmitting(true);
+    setError(null);
+    try {
+      setEnrollment(await enrollMfa());
+    } catch (caught) {
+      setError(caught);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleConfirmEnroll(event: FormEvent) {
+    event.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    try {
+      await confirmMfa(code);
+      setEnrollment(null);
+    } catch (caught) {
+      setError(caught);
+      setCode('');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   if (sessionStatus === 'loading') {
     return (
       <div className="container page">
         <Loading label="Verificando sua sessão…" />
+      </div>
+    );
+  }
+
+  // ------------------------------------------- cadastrar o segundo fator ---
+  // Conta global com perfil de dono, financeiro ou Super Admin: o segundo fator e
+  // OBRIGATORIO e ainda nao existe. Pedir "o codigo" aqui prenderia a pessoa numa tela sem saida.
+  if (sessionStatus === 'mfa_enrollment_required') {
+    return (
+      <div className="container page account">
+        <div className="account__card card">
+          <div className="card__body stack">
+            <span className="account__icon">
+              <ShieldCheck size={22} aria-hidden="true" />
+            </span>
+            <div>
+              <h1 className="account__title">Ative a verificação em duas etapas</h1>
+              <p className="muted">Seu perfil exige um aplicativo autenticador para continuar.</p>
+            </div>
+
+            {error != null && (
+              <div className="alert alert--danger" role="alert">
+                <AlertCircle className="alert__icon" size={18} aria-hidden="true" />
+                <div className="alert__body">{mensagemPara(error)}</div>
+              </div>
+            )}
+
+            {!enrollment ? (
+              <button type="button" className="btn btn--primary btn--block" onClick={() => void handleStartEnroll()} disabled={submitting}>
+                {submitting ? 'Gerando…' : 'Gerar chave'}
+              </button>
+            ) : (
+              <form className="stack" onSubmit={handleConfirmEnroll}>
+                <p>
+                  Cadastre esta chave no aplicativo autenticador. Ela é exibida <strong>uma única vez</strong>.
+                </p>
+                <p>
+                  <code>{enrollment.secret}</code>
+                </p>
+                <p>
+                  <a href={enrollment.otpauthUri}>Abrir no aplicativo autenticador</a>
+                </p>
+                <div className="field">
+                  <label className="field__label" htmlFor="enroll-code">
+                    Código gerado pelo aplicativo
+                  </label>
+                  <input
+                    id="enroll-code"
+                    className="field__input account__code"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    pattern="[0-9]{6}"
+                    maxLength={6}
+                    required
+                    value={code}
+                    onChange={(event) => setCode(event.target.value.replace(/[^0-9]/g, ''))}
+                  />
+                </div>
+                <button type="submit" className="btn btn--primary btn--block" disabled={submitting || code.length !== 6}>
+                  {submitting ? 'Confirmando…' : 'Confirmar'}
+                </button>
+              </form>
+            )}
+
+            <button type="button" className="btn btn--ghost btn--block" onClick={() => void logout()}>
+              Sair
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -130,6 +230,7 @@ export function AccountPage() {
 
   // ------------------------------------------------------------ logado ---
   if (sessionStatus === 'authenticated' && session) {
+    if (proximo) return <Navigate to={proximo} replace />;
     return (
       <div className="container page account">
         <h1 className="page__title">Minha conta</h1>
@@ -219,7 +320,12 @@ export function AccountPage() {
           </form>
 
           <p className="muted account__note">
-            Ainda não possui uma conta? <Link to="/cadastro">Criar conta</Link>
+            <Link to="/esqueci-senha">Esqueci minha senha</Link>
+          </p>
+
+          <p className="muted account__note">
+            Ainda não possui uma conta?{' '}
+            <Link to={proximo ? `/cadastro?next=${encodeURIComponent(proximo)}` : '/cadastro'}>Criar conta</Link>
           </p>
 
           <p className="muted account__note">

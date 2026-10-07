@@ -1,5 +1,6 @@
 import { useRef, useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { safeNext } from '../lib/next.ts';
 import { AlertCircle, UserPlus } from 'lucide-react';
 import { api } from '../api.ts';
 import { useStorefront } from '../state/SessionProvider.tsx';
@@ -35,6 +36,8 @@ const MINIMO_SENHA = 10;
 
 export function RegisterPage() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const proximo = safeNext(params.get('next'), '/conta')!;
   const { login } = useStorefront();
 
   const [displayName, setDisplayName] = useState('');
@@ -98,7 +101,7 @@ export function RegisterPage() {
       // Conta criada: abre a sessao pelo caminho normal de login, que ja
       // recarrega o estado da sessao no provider.
       await login(email.trim(), password);
-      navigate('/conta', { replace: true });
+      navigate(proximo, { replace: true });
     } catch (caught) {
       setErroEnvio(caught);
     } finally {

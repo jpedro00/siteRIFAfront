@@ -5,6 +5,7 @@ import { PrizeImage } from './PrizeImage.tsx';
 import { PromoNote } from './PromoNote.tsx';
 import { ProgressBar } from './ProgressBar.tsx';
 import { StatusBadge } from './StatusBadge.tsx';
+import { useAppPaths } from '../state/MarketplaceScope.tsx';
 
 /**
  * Cartao de sorteio na listagem.
@@ -15,7 +16,17 @@ import { StatusBadge } from './StatusBadge.tsx';
  * para o mouse — o `::after` esticado sobre o cartao pertence ao <a>, que
  * continua sendo um link honesto.
  */
-export function DrawCard({ draw }: { draw: PublicDrawSummary }) {
+export function DrawCard({
+  draw,
+  tenantSlug = null,
+  creatorName = null,
+}: {
+  draw: PublicDrawSummary;
+  /** No marketplace, de qual comunidade e a rifa (vai no caminho do link). */
+  tenantSlug?: string | null;
+  creatorName?: string | null;
+}) {
+  const paths = useAppPaths();
   return (
     <article className="card card--interactive draw-card">
       <PrizeImage url={draw.prizeImageUrl} alt={draw.prizeName} />
@@ -28,12 +39,13 @@ export function DrawCard({ draw }: { draw: PublicDrawSummary }) {
         <PromoNote draw={draw} />
 
         <h3 className="draw-card__title">
-          <Link className="draw-card__link" to={`/sorteio/${draw.slug}`}>
+          <Link className="draw-card__link" to={paths.draw(draw.slug, tenantSlug)}>
             {draw.prizeName}
           </Link>
         </h3>
 
         <p className="draw-card__subtitle">{draw.title}</p>
+        {creatorName && <p className="draw-card__creator">por {creatorName}</p>}
 
         <ProgressBar paid={draw.paidCount} total={draw.totalNumbers} />
 

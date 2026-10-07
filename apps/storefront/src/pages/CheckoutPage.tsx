@@ -7,6 +7,7 @@ import { ReservationTimer } from '../components/ReservationTimer.tsx';
 import { NotFoundState, mensagemPara } from '../components/States.tsx';
 import { clearReservation, loadReservation } from '../lib/reservationStore.ts';
 import { api } from '../api.ts';
+import { useAppPaths } from '../state/MarketplaceScope.tsx';
 
 /**
  * Checkout: `/sorteio/:slug/checkout`.
@@ -32,6 +33,7 @@ interface ErrosFormulario {
 }
 
 export function CheckoutPage() {
+  const paths = useAppPaths();
   const { slug = '' } = useParams<{ slug: string }>();
   const navigate = useNavigate();
 
@@ -107,7 +109,7 @@ export function CheckoutPage() {
       });
 
       clearReservation();
-      navigate(`/pedido/${pedido.orderId}`, { replace: true });
+      navigate(paths.order(pedido.orderId), { replace: true });
     } catch (falha) {
       setErroEnvio(mensagemPara(falha));
     } finally {
@@ -126,7 +128,7 @@ export function CheckoutPage() {
           title="Não encontramos sua reserva"
           message="Sua reserva pode ter expirado ou esta página foi aberta fora do fluxo de compra. Escolha seus números novamente."
           action={
-            <Link className="btn btn--primary" to={slug ? `/sorteio/${slug}` : '/sorteios'}>
+            <Link className="btn btn--primary" to={slug ? paths.draw(slug) : '/sorteios'}>
               Escolher números
             </Link>
           }
@@ -139,7 +141,7 @@ export function CheckoutPage() {
 
   return (
     <div className="container page checkout">
-      <Link className="back-link" to={`/sorteio/${guardada.drawSlug}`}>
+      <Link className="back-link" to={paths.draw(guardada.drawSlug)}>
         <ArrowLeft size={16} aria-hidden="true" />
         Voltar ao sorteio
       </Link>
@@ -159,7 +161,7 @@ export function CheckoutPage() {
             <p className="alert__title">Sua reserva expirou</p>
             <p>
               Os números voltaram a ficar disponíveis para outras pessoas.{' '}
-              <Link to={`/sorteio/${guardada.drawSlug}`}>Escolher novamente</Link>.
+              <Link to={paths.draw(guardada.drawSlug)}>Escolher novamente</Link>.
             </p>
           </div>
         </div>
