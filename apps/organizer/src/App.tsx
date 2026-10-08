@@ -16,6 +16,7 @@ import { SubscriptionPage } from './pages/SubscriptionPage.tsx';
 import { ReceiptsPage } from './pages/ReceiptsPage.tsx';
 import { CommunityPage } from './pages/CommunityPage.tsx';
 import { ClientsPage } from './pages/ClientsPage.tsx';
+import { CommunityPickerPage, NoCommunityPage } from './pages/CommunityPickerPage.tsx';
 
 /**
  * Painel do Organizador.
@@ -84,7 +85,11 @@ const NAV: NavItem[] = [
 ];
 
 function Shell() {
-  const { tenant, tenantError, tenantLoading, can } = useSession();
+  const { tenant, tenantError, tenantLoading, can, needsCommunity, noCommunity } = useSession();
+
+  // Conta global: pode nao ter comunidade, ter uma (entra direto) ou varias (escolhe).
+  if (noCommunity) return <NoCommunityPage />;
+  if (needsCommunity) return <CommunityPickerPage />;
 
   if (tenantLoading) return <Loading label="Carregando a comunidade…" />;
 

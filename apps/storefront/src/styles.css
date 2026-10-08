@@ -2154,3 +2154,18 @@
 .site-footer__contact { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: var(--space-4); }
 .site-footer__contact a { display: inline-flex; gap: 6px; align-items: center; }
 .institutional__body { max-width: 46rem; }
+
+/* Marketplace */
+.market-hero { display: grid; gap: var(--space-4); padding-block: var(--space-8); }
+.market-hero__title { margin: 0; font-size: var(--text-3xl); line-height: 1.15; max-width: 22ch; overflow-wrap: anywhere; }
+.market-hero__lead { margin: 0; color: var(--text-muted); max-width: 52ch; }
+.market-search { display: flex; align-items: center; gap: var(--space-2); max-width: 36rem; padding: var(--space-2) var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
+.market-search__input { flex: 1; min-width: 0; border: 0; background: transparent; color: inherit; font: inherit; outline: none; }
+.creator-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: var(--space-3); }
+.creator-card__logo { width: 2.5rem; height: 2.5rem; border-radius: var(--radius-md); object-fit: cover; flex: none; }
+.creator-card__logo--empty { display: grid; place-items: center; background: var(--surface-sunken); color: var(--text-muted); }
+.creator-card__name { font-weight: var(--weight-semibold); }
+.creator-header { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; }
+.creator-header__logo { width: 4rem; height: 4rem; border-radius: var(--radius-lg); object-fit: cover; }
+.draw-card__creator { margin: 0; font-size: var(--text-sm); color: var(--text-muted); }
+.steps { margin: 0; padding-left: var(--space-5); display: grid; gap: var(--space-2); }

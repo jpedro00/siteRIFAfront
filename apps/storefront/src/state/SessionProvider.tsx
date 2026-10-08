@@ -15,6 +15,7 @@ import {
   type SessionResponse,
 } from '@clubedarifa/shared';
 import { api } from '../api.ts';
+import { IS_CENTRAL } from '../lib/mode.ts';
 
 /**
  * Estado da vitrine.
@@ -30,11 +31,23 @@ import { api } from '../api.ts';
  *                ligado ao comprovante, nao a um usuario. Entrar serve para a
  *                area de conta; a compra funciona sem isso.
  */
+/** Login aceito pela API, mas o navegador nao guardou o cookie de sessao. */
+export class SessionCookieBlockedError extends Error {
+  constructor() {
+    super(
+      'Sua senha está correta, mas o navegador bloqueou o cookie de sessão e não foi possível entrar. Libere os cookies para este site (ou desative o bloqueio de cookies de terceiros) e tente de novo.',
+    );
+    this.name = 'SessionCookieBlockedError';
+  }
+}
+
 export type TenantStatus = 'loading' | 'resolved' | 'not_found' | 'error';
 export type SessionStatus =
   | 'loading'
   | 'anonymous'
   | 'mfa_required'
+  /** Perfil que exige MFA (dono, financeiro, Super Admin) e ainda sem fator: cadastrar, nao verificar. */
+  | 'mfa_enrollment_required'
   /** Nao foi possivel FALAR com a API — nao e prova de que a sessao acabou. */
   | 'unavailable'
   | 'authenticated';
@@ -47,8 +60,12 @@ interface StorefrontState {
   readonly session: SessionResponse | null;
   login(email: string, password: string): Promise<void>;
   verifyMfa(code: string): Promise<void>;
+  enrollMfa(): Promise<{ secret: string; otpauthUri: string }>;
+  confirmMfa(code: string): Promise<void>;
   logout(): Promise<void>;
   reloadTenant(): void;
+  /** Rele a sessao (ex.: depois de a conta virar dona de uma comunidade). */
+  refreshSession(): Promise<void>;
 }
 
 const StorefrontContext = createContext<StorefrontState | null>(null);
@@ -64,6 +81,12 @@ export function StorefrontProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
+    // Marketplace central: nao ha UMA comunidade. A comunidade de cada rifa vem do caminho.
+    if (IS_CENTRAL) {
+      setTenant(null);
+      setTenantStatus('resolved');
+      return;
+    }
     setTenantStatus('loading');
     setTenantError(null);
 
@@ -89,11 +112,15 @@ export function StorefrontProvider({ children }: { children: ReactNode }) {
     };
   }, [reloadToken]);
 
-  const loadSession = useCallback(async () => {
+  const loadSession = useCallback(async (): Promise<SessionStatus> => {
     try {
       const result = await api.call('session');
       setSession(result);
-      setSessionStatus(sessionNeed(result) === 'nothing' ? 'authenticated' : 'mfa_required');
+      const need = sessionNeed(result);
+      const proximo: SessionStatus =
+        need === 'nothing' ? 'authenticated' : need === 'mfa_enrollment' ? 'mfa_enrollment_required' : 'mfa_required';
+      setSessionStatus(proximo);
+      return proximo;
     } catch (error) {
       // Visitante sem sessao e o caso NORMAL na vitrine, nao um erro — mas
       // "nao consegui perguntar" tambem nao e "visitante". A vitrine e publica
@@ -101,9 +128,10 @@ export function StorefrontProvider({ children }: { children: ReactNode }) {
       if (classifySessionFailure(error) === 'unauthenticated') {
         setSession(null);
         setSessionStatus('anonymous');
-        return;
+        return 'anonymous';
       }
       setSessionStatus('unavailable');
+      return 'unavailable';
     }
   }, []);
 
@@ -121,11 +149,24 @@ export function StorefrontProvider({ children }: { children: ReactNode }) {
 
       async login(email, password) {
         await api.call('login', { email, password });
-        await loadSession();
+        const estado = await loadSession();
+        // A API aceitou a senha (200) mas a sessao nao existe logo depois: o navegador DESCARTOU o
+        // cookie (bloqueio de cookies de terceiros, modo anonimo, Safari/Firefox/Brave). Sem este
+        // aviso a pessoa so veria a tela de login de novo, sem saber por que.
+        if (estado === 'anonymous') throw new SessionCookieBlockedError();
       },
 
       async verifyMfa(code) {
         await api.call('mfaVerify', { code });
+        await loadSession();
+      },
+
+      async enrollMfa() {
+        return api.call('mfaEnrollStart');
+      },
+
+      async confirmMfa(code) {
+        await api.call('mfaEnrollConfirm', { code });
         await loadSession();
       },
 
@@ -140,6 +181,10 @@ export function StorefrontProvider({ children }: { children: ReactNode }) {
 
       reloadTenant() {
         setReloadToken((token) => token + 1);
+      },
+
+      async refreshSession() {
+        await loadSession();
       },
     }),
     [tenantStatus, tenant, tenantError, sessionStatus, session, loadSession],

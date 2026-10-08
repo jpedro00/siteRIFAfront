@@ -1,4 +1,8 @@
-import { Link, Route, Routes } from 'react-router-dom';
+import { Link, Navigate, Route, Routes, useParams } from 'react-router-dom';
+import { IS_CENTRAL, LEGACY_TENANT_SLUG } from './lib/mode.ts';
+import { MarketplaceScope } from './state/MarketplaceScope.tsx';
+import { CreatorPage, MarketplaceDrawsPage, MarketplaceHomePage } from './pages/MarketplacePages.tsx';
+import { CreatorOnboardingPage } from './pages/CreatorOnboardingPage.tsx';
 import { StorefrontProvider, useStorefront } from './state/SessionProvider.tsx';
 import { PublicHeader } from './components/PublicHeader.tsx';
 import { PublicFooter } from './components/PublicFooter.tsx';
@@ -13,6 +17,7 @@ import { ResultPage } from './pages/ResultPage.tsx';
 import { AccountPage } from './pages/AccountPage.tsx';
 import { RegisterPage } from './pages/RegisterPage.tsx';
 import { InstitutionalPage } from './pages/InstitutionalPage.tsx';
+import { ForgotPasswordPage, ResetPasswordPage } from './pages/PasswordPages.tsx';
 import { accentStyle } from './lib/brand.ts';
 
 /**
@@ -31,6 +36,13 @@ import { accentStyle } from './lib/brand.ts';
  *
  * O que entrou: cabecalho publico, conteudo em largura total e rodape.
  */
+/** `/sorteio/:slug...` (modo por comunidade) -> `/rifa/<comunidade herdeira>/:slug...`, so se configurada. */
+function LegacyDrawRedirect({ to }: { to: string }) {
+  const { slug = '' } = useParams<{ slug: string }>();
+  if (!LEGACY_TENANT_SLUG) return <Navigate to="/sorteios" replace />;
+  return <Navigate to={`/rifa/${LEGACY_TENANT_SLUG}/${slug}${to}`} replace />;
+}
+
 function Shell() {
   const { tenantStatus, tenant, tenantError, reloadTenant } = useStorefront();
 
@@ -55,7 +67,7 @@ function Shell() {
     );
   }
 
-  if (tenantStatus === 'error' || !tenant) {
+  if (tenantStatus === 'error' || (!tenant && !IS_CENTRAL)) {
     return (
       <main className="container page">
         <ErrorState
@@ -68,7 +80,7 @@ function Shell() {
   }
 
   return (
-    <div className="site" style={accentStyle(tenant.colors['primary'])}>
+    <div className="site" style={IS_CENTRAL ? undefined : accentStyle(tenant?.colors['primary'])}>
       <ScrollToTop />
 
       <a className="skip-link" href="#conteudo">
@@ -79,15 +91,36 @@ function Shell() {
 
       <main className="site__main" id="conteudo">
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/sorteios" element={<DrawsPage />} />
-          <Route path="/sorteio/:slug" element={<DrawPage />} />
-          <Route path="/sorteio/:slug/checkout" element={<CheckoutPage />} />
-          <Route path="/sorteio/:slug/resultado" element={<ResultPage />} />
-          <Route path="/pedido/:id" element={<OrderPage />} />
+          <Route path="/" element={IS_CENTRAL ? <MarketplaceHomePage /> : <HomePage />} />
+          <Route path="/sorteios" element={IS_CENTRAL ? <MarketplaceDrawsPage /> : <DrawsPage />} />
+          {IS_CENTRAL ? (
+            <>
+              <Route path="/criador/:tenantSlug" element={<CreatorPage />} />
+              <Route path="/rifa/:tenantSlug" element={<MarketplaceScope />}>
+                <Route path=":slug" element={<DrawPage />} />
+                <Route path=":slug/checkout" element={<CheckoutPage />} />
+                <Route path=":slug/resultado" element={<ResultPage />} />
+                <Route path="pedido/:id" element={<OrderPage />} />
+              </Route>
+              {/* Links antigos (/sorteio/:slug) seguem funcionando se houver comunidade herdeira. */}
+              <Route path="/sorteio/:slug" element={<LegacyDrawRedirect to="" />} />
+              <Route path="/sorteio/:slug/checkout" element={<LegacyDrawRedirect to="/checkout" />} />
+              <Route path="/sorteio/:slug/resultado" element={<LegacyDrawRedirect to="/resultado" />} />
+            </>
+          ) : (
+            <>
+              <Route path="/sorteio/:slug" element={<DrawPage />} />
+              <Route path="/sorteio/:slug/checkout" element={<CheckoutPage />} />
+              <Route path="/sorteio/:slug/resultado" element={<ResultPage />} />
+              <Route path="/pedido/:id" element={<OrderPage />} />
+            </>
+          )}
+          <Route path="/quero-criar-rifas" element={<CreatorOnboardingPage />} />
           <Route path="/conta" element={<AccountPage />} />
           <Route path="/cadastro" element={<RegisterPage />} />
           <Route path="/p/:key" element={<InstitutionalPage />} />
+          <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
+          <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
           <Route
             path="*"
             element={

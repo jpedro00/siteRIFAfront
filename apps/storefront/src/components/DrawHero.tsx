@@ -5,6 +5,7 @@ import { PrizeImage } from './PrizeImage.tsx';
 import { PromoNote } from './PromoNote.tsx';
 import { ProgressBar } from './ProgressBar.tsx';
 import { StatusBadge, isBuyable } from './StatusBadge.tsx';
+import { useAppPaths } from '../state/MarketplaceScope.tsx';
 
 /**
  * Vitrine do sorteio em destaque.
@@ -20,7 +21,8 @@ import { StatusBadge, isBuyable } from './StatusBadge.tsx';
  * nao vai para duas pessoas — isso e garantido pelo banco, com teste de
  * concorrencia.
  */
-export function DrawHero({ draw }: { draw: PublicDrawSummary }) {
+export function DrawHero({ draw, tenantSlug = null }: { draw: PublicDrawSummary; tenantSlug?: string | null }) {
+  const paths = useAppPaths();
   const vendendo = isBuyable(draw.status);
 
   return (
@@ -51,7 +53,7 @@ export function DrawHero({ draw }: { draw: PublicDrawSummary }) {
         <div className="hero__actions">
           <Link
             className="btn btn--primary btn--lg hero__cta"
-            to={`/sorteio/${draw.slug}`}
+            to={paths.draw(draw.slug, tenantSlug)}
             aria-label={`Escolher números do sorteio ${draw.prizeName}`}
           >
             {vendendo ? 'Escolher números' : 'Ver o sorteio'}

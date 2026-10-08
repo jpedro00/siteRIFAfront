@@ -10,6 +10,7 @@ import {
 } from '@clubedarifa/shared';
 import { api } from '../api.ts';
 import { ErrorState, Loading } from './States.tsx';
+import { useAppPaths } from '../state/MarketplaceScope.tsx';
 
 /**
  * Pedidos da conta, agrupados por comunidade.
@@ -65,6 +66,7 @@ function agrupar(pedidos: readonly AccountOrder[]): Grupo[] {
 }
 
 export function AccountOrders() {
+  const paths = useAppPaths();
   const [pedidos, setPedidos] = useState<AccountOrder[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
@@ -197,7 +199,7 @@ export function AccountOrders() {
                     <strong>{formatCents(pedido.totalCents)}</strong>
                   </div>
 
-                  <Link className="btn btn--secondary btn--sm" to={`/pedido/${pedido.orderId}`}>
+                  <Link className="btn btn--secondary btn--sm" to={paths.order(pedido.orderId, pedido.tenantSlug)}>
                     <Receipt size={15} aria-hidden="true" />
                     Ver comprovante
                   </Link>

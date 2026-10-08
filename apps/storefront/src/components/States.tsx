@@ -107,6 +107,8 @@ function mensagemDoServidor(error: ApiClientError): string | null {
 }
 
 export function mensagemPara(error: unknown): string {
+  // Mensagem propria, ja pronta para a pessoa (ex.: cookie de sessao bloqueado pelo navegador).
+  if (error instanceof Error && error.name === 'SessionCookieBlockedError') return error.message;
   if (error instanceof ApiClientError) {
     switch (error.code) {
       case 'TENANT_NOT_RESOLVED':

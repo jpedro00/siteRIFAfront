@@ -26,6 +26,7 @@ import { useApiPolling } from '../hooks/useApiPolling.ts';
 import { useDocumentMeta } from '../hooks/useDocumentMeta.ts';
 import { saveReservation } from '../lib/reservationStore.ts';
 import { api } from '../api.ts';
+import { useAppPaths } from '../state/MarketplaceScope.tsx';
 import { accentStyle, imageSrc as imagem } from '../lib/brand.ts';
 import { Countdown } from '../components/Countdown.tsx';
 import { RecentBuyers } from '../components/RecentBuyers.tsx';
@@ -56,6 +57,7 @@ const MAX_SELECAO = 100;
 const INTERVALO_GRADE_MS = 3_000;
 
 export function DrawPage() {
+  const paths = useAppPaths();
   const { slug = '' } = useParams<{ slug: string }>();
   const navigate = useNavigate();
 
@@ -199,7 +201,7 @@ export function DrawPage() {
         labelDigits: labelDigitsForGridSize(sorteio.data.totalNumbers),
       });
 
-      navigate(`/sorteio/${sorteio.data.slug}/checkout`, {
+      navigate(paths.checkout(sorteio.data.slug), {
         state: { reservationId: reserva.reservationId },
       });
     } catch (falha) {
@@ -232,7 +234,7 @@ export function DrawPage() {
     } finally {
       setReservando(false);
     }
-  }, [limiteMin, navigate, numeros, ordenados, sorteio.data]);
+  }, [limiteMin, navigate, numeros, ordenados, paths, sorteio.data]);
 
   // -------------------------------------------------------------------------
   if (sorteio.status === 'loading') {
@@ -303,7 +305,7 @@ export function DrawPage() {
           </header>
 
           {comResultado && (
-            <Link className="alert alert--success result-banner" to={`/sorteio/${draw.slug}/resultado`}>
+            <Link className="alert alert--success result-banner" to={paths.result(draw.slug)}>
               <Trophy className="alert__icon" size={18} aria-hidden="true" />
               <span className="alert__body">
                 <strong>O resultado foi publicado.</strong> Veja o número contemplado e como ele foi

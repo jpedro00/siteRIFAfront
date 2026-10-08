@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { LogOut, Menu, Ticket, X } from 'lucide-react';
 import { MEMBERSHIP_ROLE_LABELS, initialsOf, type TenantPermission } from '@clubedarifa/shared';
 import { useSession } from '../state/SessionProvider.tsx';
@@ -47,7 +47,8 @@ export function DashboardShell({
   children: ReactNode;
   topbar?: ReactNode;
 }) {
-  const { session, tenant, logout, can } = useSession();
+  const { session, tenant, logout, can, communities, selectCommunity } = useSession();
+  const navigate = useNavigate();
   const [aberta, setAberta] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
@@ -114,6 +115,28 @@ export function DashboardShell({
               <p className="sidebar__tenant-name">{tenant.name}</p>
               <p className="sidebar__tenant-slug">{tenant.slug}</p>
             </div>
+          </div>
+        )}
+        {tenant && communities.length > 1 && (
+          <div className="sidebar__switch">
+            <label className="sr-only" htmlFor="trocar-comunidade">
+              Trocar de comunidade
+            </label>
+            <select
+              id="trocar-comunidade"
+              className="input"
+              value={tenant.slug}
+              onChange={(event) => {
+                selectCommunity(event.target.value);
+                navigate('/');
+              }}
+            >
+              {communities.map((m) => (
+                <option key={m.tenantId} value={m.tenantSlug}>
+                  {m.tenantName}
+                </option>
+              ))}
+            </select>
           </div>
         )}
 

@@ -1,4 +1,5 @@
 import { Link, useParams } from 'react-router-dom';
+import { useAppPaths } from '../state/MarketplaceScope.tsx';
 import { ArrowLeft, Award, FileCheck2, PackageCheck, Trophy } from 'lucide-react';
 import {
   ApiClientError,
@@ -31,6 +32,7 @@ const ROTULO_ENTREGA: Record<DeliveryMethod, string> = {
 };
 
 export function ResultPage() {
+  const paths = useAppPaths();
   const { slug = '' } = useParams<{ slug: string }>();
 
   const resultado = useApiResource(
@@ -66,7 +68,7 @@ export function ResultPage() {
             title="O resultado ainda não foi publicado"
             message="Quando a organização publicar, ele aparece aqui, com a prova de como foi apurado."
             action={
-              <Link className="btn btn--primary" to={`/sorteio/${slug}`}>
+              <Link className="btn btn--primary" to={paths.draw(slug)}>
                 Voltar ao sorteio
               </Link>
             }
@@ -82,7 +84,7 @@ export function ResultPage() {
 
   return (
     <div className="container page result-page">
-      <Link className="back-link" to={`/sorteio/${slug}`}>
+      <Link className="back-link" to={paths.draw(slug)}>
         <ArrowLeft size={16} aria-hidden="true" />
         Voltar ao sorteio
       </Link>

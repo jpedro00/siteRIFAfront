@@ -600,3 +600,6 @@ fieldset.field { border: 0; padding: 0; margin: 0; }
 .uploader__actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
 .uploader__input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .color-input { width: 3rem; height: 2.25rem; padding: 0; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); }
+
+.sidebar__switch { padding: 0 var(--space-3) var(--space-3); }
+.sidebar__switch select { width: 100%; }
