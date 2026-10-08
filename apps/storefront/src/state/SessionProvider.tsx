@@ -31,6 +31,16 @@ import { IS_CENTRAL } from '../lib/mode.ts';
  *                ligado ao comprovante, nao a um usuario. Entrar serve para a
  *                area de conta; a compra funciona sem isso.
  */
+/** Login aceito pela API, mas o navegador nao guardou o cookie de sessao. */
+export class SessionCookieBlockedError extends Error {
+  constructor() {
+    super(
+      'Sua senha está correta, mas o navegador bloqueou o cookie de sessão e não foi possível entrar. Libere os cookies para este site (ou desative o bloqueio de cookies de terceiros) e tente de novo.',
+    );
+    this.name = 'SessionCookieBlockedError';
+  }
+}
+
 export type TenantStatus = 'loading' | 'resolved' | 'not_found' | 'error';
 export type SessionStatus =
   | 'loading'
@@ -102,14 +112,15 @@ export function StorefrontProvider({ children }: { children: ReactNode }) {
     };
   }, [reloadToken]);
 
-  const loadSession = useCallback(async () => {
+  const loadSession = useCallback(async (): Promise<SessionStatus> => {
     try {
       const result = await api.call('session');
       setSession(result);
       const need = sessionNeed(result);
-      setSessionStatus(
-        need === 'nothing' ? 'authenticated' : need === 'mfa_enrollment' ? 'mfa_enrollment_required' : 'mfa_required',
-      );
+      const proximo: SessionStatus =
+        need === 'nothing' ? 'authenticated' : need === 'mfa_enrollment' ? 'mfa_enrollment_required' : 'mfa_required';
+      setSessionStatus(proximo);
+      return proximo;
     } catch (error) {
       // Visitante sem sessao e o caso NORMAL na vitrine, nao um erro — mas
       // "nao consegui perguntar" tambem nao e "visitante". A vitrine e publica
@@ -117,9 +128,10 @@ export function StorefrontProvider({ children }: { children: ReactNode }) {
       if (classifySessionFailure(error) === 'unauthenticated') {
         setSession(null);
         setSessionStatus('anonymous');
-        return;
+        return 'anonymous';
       }
       setSessionStatus('unavailable');
+      return 'unavailable';
     }
   }, []);
 
@@ -137,7 +149,11 @@ export function StorefrontProvider({ children }: { children: ReactNode }) {
 
       async login(email, password) {
         await api.call('login', { email, password });
-        await loadSession();
+        const estado = await loadSession();
+        // A API aceitou a senha (200) mas a sessao nao existe logo depois: o navegador DESCARTOU o
+        // cookie (bloqueio de cookies de terceiros, modo anonimo, Safari/Firefox/Brave). Sem este
+        // aviso a pessoa so veria a tela de login de novo, sem saber por que.
+        if (estado === 'anonymous') throw new SessionCookieBlockedError();
       },
 
       async verifyMfa(code) {
