@@ -1,3 +1,4 @@
+import { QRCodeSVG } from 'qrcode.react';
 import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { safeNext } from '../lib/next.ts';
@@ -128,6 +129,10 @@ export function AccountPage() {
                 <p>
                   Cadastre esta chave no aplicativo autenticador. Ela é exibida <strong>uma única vez</strong>.
                 </p>
+                <p style={{ textAlign: 'center' }}>
+                  <QRCodeSVG value={enrollment.otpauthUri} size={176} marginSize={2} title="QR code para o aplicativo autenticador" />
+                </p>
+                <p className="muted">Escaneie com o Google Authenticator (ou outro autenticador). Sem câmera, digite a chave abaixo.</p>
                 <p>
                   <code>{enrollment.secret}</code>
                 </p>

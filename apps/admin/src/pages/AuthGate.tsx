@@ -1,3 +1,4 @@
+import { QRCodeSVG } from 'qrcode.react';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { ApiClientError } from '@clubedarifa/shared';
 import { useSession } from '../state/SessionProvider.tsx';
@@ -244,6 +245,10 @@ function MfaEnrollScreen() {
               Cadastre esta chave no seu aplicativo autenticador. Ela é exibida{' '}
               <strong>uma única vez</strong>.
             </p>
+            <p style={{ textAlign: 'center' }}>
+              <QRCodeSVG value={enrollment.otpauthUri} size={176} marginSize={2} title="QR code para o aplicativo autenticador" />
+            </p>
+            <p className="muted">Escaneie com o Google Authenticator (ou outro autenticador). Sem câmera, digite a chave abaixo.</p>
             <p>
               <code>{enrollment.secret}</code>
             </p>
