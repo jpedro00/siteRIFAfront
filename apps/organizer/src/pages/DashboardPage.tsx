@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 import { formatCentsCompact, formatInteger } from '@clubedarifa/shared';
 import {
-  EmptyState,
   ErrorPanel,
   MetricCard,
   MetricsSkeleton,
@@ -20,6 +19,7 @@ import {
   TableSkeleton,
 } from '../components/Ui.tsx';
 import { SalesChart } from '../components/SalesChart.tsx';
+import { FirstStepsChecklist } from '../components/FirstStepsChecklist.tsx';
 import { useApiResource } from '../hooks/useApiResource.ts';
 import { useSession } from '../state/SessionProvider.tsx';
 import { api } from '../api.ts';
@@ -155,19 +155,7 @@ export function DashboardPage() {
             </div>
 
             {lista.length === 0 ? (
-              <EmptyState
-                icon={<Ticket size={26} aria-hidden="true" />}
-                title="Nenhum sorteio ainda"
-                text="Crie o primeiro sorteio desta comunidade para começar a vender números."
-                action={
-                  can('draw:write') ? (
-                    <Link className="btn btn--primary" to="/sorteios/novo">
-                      <Plus size={16} aria-hidden="true" />
-                      Criar sorteio
-                    </Link>
-                  ) : undefined
-                }
-              />
+              <FirstStepsChecklist />
             ) : (
               <div className="table-wrap">
                 <table className="table">

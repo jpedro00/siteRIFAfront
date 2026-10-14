@@ -1,5 +1,5 @@
 import { Link, Route, Routes } from 'react-router-dom';
-import { Activity, Banknote, Building2, ClipboardCheck, CreditCard, Layers } from 'lucide-react';
+import { Activity, Banknote, BarChart3, Building2, ClipboardCheck, CreditCard, Layers, Store, Users } from 'lucide-react';
 import { SessionProvider, useSession } from './state/SessionProvider.tsx';
 import { AuthGate } from './pages/AuthGate.tsx';
 import { AdminShell, type AdminNavItem } from './components/AdminShell.tsx';
@@ -10,6 +10,9 @@ import { HealthPage } from './pages/HealthPage.tsx';
 import { ReviewQueuePage } from './pages/ReviewQueuePage.tsx';
 import { PlansPage } from './pages/PlansPage.tsx';
 import { SubscriptionsPage } from './pages/SubscriptionsPage.tsx';
+import { UsersPage } from './pages/UsersPage.tsx';
+import { CreatorsPage } from './pages/CreatorsPage.tsx';
+import { MetricsPage } from './pages/MetricsPage.tsx';
 import { FinancePage } from './pages/FinancePage.tsx';
 
 /**
@@ -30,6 +33,24 @@ const NAV: AdminNavItem[] = [
     label: 'Comunidades',
     icon: <Building2 size={17} aria-hidden="true" />,
     permission: 'platform:tenant:read',
+  },
+  {
+    to: '/criadores',
+    label: 'Criadores',
+    icon: <Store size={17} aria-hidden="true" />,
+    permission: 'platform:tenant:read',
+  },
+  {
+    to: '/usuarios',
+    label: 'Usuários',
+    icon: <Users size={17} aria-hidden="true" />,
+    permission: 'platform:user:read',
+  },
+  {
+    to: '/metricas',
+    label: 'Métricas',
+    icon: <BarChart3 size={17} aria-hidden="true" />,
+    permission: 'platform:metrics:read',
   },
   {
     to: '/revisao',
@@ -79,6 +100,36 @@ function Shell() {
               <TenantsPage />
             ) : (
               <AccessDenied message="Seu perfil de Super Admin não inclui a leitura de comunidades." />
+            )
+          }
+        />
+        <Route
+          path="/criadores"
+          element={
+            can('platform:tenant:read') ? (
+              <CreatorsPage />
+            ) : (
+              <AccessDenied message="Seu perfil de Super Admin não inclui a leitura de criadores." />
+            )
+          }
+        />
+        <Route
+          path="/usuarios"
+          element={
+            can('platform:user:read') ? (
+              <UsersPage />
+            ) : (
+              <AccessDenied message="Seu perfil de Super Admin não inclui a leitura de usuários." />
+            )
+          }
+        />
+        <Route
+          path="/metricas"
+          element={
+            can('platform:metrics:read') ? (
+              <MetricsPage />
+            ) : (
+              <AccessDenied message="Seu perfil de Super Admin não inclui as métricas da plataforma." />
             )
           }
         />

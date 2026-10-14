@@ -2,7 +2,9 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { safeNext } from '../lib/next.ts';
-import { AlertCircle, LogOut, ShieldCheck } from 'lucide-react';
+import { AlertCircle, LayoutDashboard, LogOut, ShieldCheck, Store, Ticket } from 'lucide-react';
+import { IS_CENTRAL } from '../lib/mode.ts';
+import { comunidadesDoCriador, painelUrl } from '../lib/painel.ts';
 import { initialsOf } from '@clubedarifa/shared';
 import { useStorefront } from '../state/SessionProvider.tsx';
 import { Loading, mensagemPara } from '../components/States.tsx';
@@ -236,6 +238,7 @@ export function AccountPage() {
   // ------------------------------------------------------------ logado ---
   if (sessionStatus === 'authenticated' && session) {
     if (proximo) return <Navigate to={proximo} replace />;
+    const donas = comunidadesDoCriador(session);
     return (
       <div className="container page account">
         <h1 className="page__title">Minha conta</h1>
@@ -261,6 +264,52 @@ export function AccountPage() {
             </button>
           </div>
         </div>
+
+        <section className="stack">
+          <h2 className="account__section-title">Ações</h2>
+          <div className="card">
+            <div className="card__body stack">
+              <Link className="btn btn--secondary" to="/sorteios">
+                <Ticket size={16} aria-hidden="true" />
+                Explorar rifas
+              </Link>
+              {donas.length === 0 ? (
+                IS_CENTRAL && (
+                  <Link className="btn btn--primary" to="/quero-criar-rifas">
+                    <Store size={16} aria-hidden="true" />
+                    Quero criar rifas
+                  </Link>
+                )
+              ) : (
+                <>
+                  {donas.map((m) => {
+                    const url = painelUrl(m.tenantSlug);
+                    return (
+                      <div key={m.tenantId} className="row row--between">
+                        <span>
+                          <strong>{m.tenantName}</strong> <span className="muted">/{m.tenantSlug}</span>
+                        </span>
+                        {url ? (
+                          <a className="btn btn--primary btn--sm" href={url}>
+                            <LayoutDashboard size={15} aria-hidden="true" />
+                            Abrir painel
+                          </a>
+                        ) : (
+                          <span className="muted">Painel indisponível no momento</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {IS_CENTRAL && (
+                    <Link className="btn btn--ghost btn--sm" to="/quero-criar-rifas">
+                      Criar outra comunidade
+                    </Link>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </section>
 
         <section className="stack">
           <h2 className="account__section-title">Minhas participações</h2>
@@ -336,6 +385,10 @@ export function AccountPage() {
           <p className="muted account__note">
             Para participar de um sorteio você não precisa de conta: seus dados são pedidos na
             hora da compra.
+          </p>
+
+          <p className="muted account__note">
+            <Link to="/">Voltar ao início</Link>
           </p>
         </div>
       </div>

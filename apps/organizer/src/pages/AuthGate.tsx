@@ -3,6 +3,7 @@ import { useState, type FormEvent, type ReactNode } from 'react';
 import { ApiClientError } from '@clubedarifa/shared';
 import { useSession } from '../state/SessionProvider.tsx';
 import { Loading } from '../components/States.tsx';
+import { clubeUrl, esqueciSenhaUrl, queroCriarUrl } from '../lib/site.ts';
 
 /**
  * Porteiro de sessao.
@@ -114,6 +115,17 @@ function LoginScreen() {
         <button type="submit" data-variant="primary" disabled={submitting}>
           {submitting ? 'Entrando…' : 'Entrar'}
         </button>
+
+        <p className="muted">
+          {esqueciSenhaUrl() && <a href={esqueciSenhaUrl() ?? undefined}>Esqueci minha senha</a>}
+          {esqueciSenhaUrl() && queroCriarUrl() && ' · '}
+          {queroCriarUrl() && <a href={queroCriarUrl() ?? undefined}>Ainda não tenho conta</a>}
+        </p>
+        {clubeUrl() && (
+          <p className="muted">
+            <a href={clubeUrl() ?? undefined}>← Voltar ao Clube da Rifa</a>
+          </p>
+        )}
       </form>
     </div>
   );

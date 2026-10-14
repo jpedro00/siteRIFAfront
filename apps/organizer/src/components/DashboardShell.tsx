@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { LogOut, Menu, Ticket, X } from 'lucide-react';
+import { ExternalLink, LogOut, Menu, Store, Ticket, X } from 'lucide-react';
 import { MEMBERSHIP_ROLE_LABELS, initialsOf, type TenantPermission } from '@clubedarifa/shared';
 import { useSession } from '../state/SessionProvider.tsx';
+import { clubeUrl, vitrineUrl } from '../lib/site.ts';
 
 /**
  * Casco do painel: barra lateral + barra superior + conteudo.
@@ -88,6 +89,8 @@ export function DashboardShell({
   }, []);
 
   const papel = tenant?.roles?.[0];
+  const urlVitrine = vitrineUrl(tenant?.slug);
+  const urlClube = clubeUrl();
 
   return (
     <div className="dash">
@@ -160,6 +163,25 @@ export function DashboardShell({
             </div>
           ))}
         </nav>
+
+        {(urlVitrine || urlClube) && (
+          <nav className="sidebar__nav" aria-label="Site público">
+            <p className="sidebar__section">Site público</p>
+            {urlVitrine && (
+              <a className="sidebar__link" href={urlVitrine} target="_blank" rel="noopener noreferrer">
+                <Store size={16} aria-hidden="true" />
+                Ver minha vitrine
+                <ExternalLink size={12} aria-hidden="true" />
+              </a>
+            )}
+            {urlClube && (
+              <a className="sidebar__link" href={urlClube}>
+                <Ticket size={16} aria-hidden="true" />
+                Voltar ao Clube da Rifa
+              </a>
+            )}
+          </nav>
+        )}
 
         <div className="sidebar__footer">
           <div className="sidebar__user">

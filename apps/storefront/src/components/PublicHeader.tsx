@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { LogIn, Menu, Ticket, User, X } from 'lucide-react';
+import { LayoutDashboard, LogIn, Menu, Ticket, User, UserPlus, X } from 'lucide-react';
 import { imageSrc } from '../lib/brand.ts';
 import { IS_CENTRAL, PLATFORM_NAME } from '../lib/mode.ts';
+import { comunidadesDoCriador, painelUrlDoCriador } from '../lib/painel.ts';
 import { initialsOf } from '@clubedarifa/shared';
 import { useStorefront } from '../state/SessionProvider.tsx';
 
@@ -66,6 +67,8 @@ export function PublicHeader({ hasResults = false }: { hasResults?: boolean }) {
   }, [menuAberto]);
 
   const autenticado = sessionStatus === 'authenticated' && session;
+  const donas = autenticado ? comunidadesDoCriador(session) : [];
+  const urlPainel = painelUrlDoCriador(donas);
   const nomeComunidade = IS_CENTRAL ? PLATFORM_NAME : (tenant?.publicName ?? tenant?.name ?? 'Comunidade');
   const logo = IS_CENTRAL ? null : imageSrc(tenant?.logoLightUrl);
 
@@ -107,17 +110,31 @@ export function PublicHeader({ hasResults = false }: { hasResults?: boolean }) {
 
         <div className="site-header__actions">
           {autenticado ? (
-            <Link className="site-header__account" to="/conta">
-              <span className="site-header__avatar" aria-hidden="true">
-                {initialsOf(session.user.displayName)}
-              </span>
-              <span className="site-header__account-name">Minha conta</span>
-            </Link>
+            <>
+              {urlPainel && (
+                <a className="btn btn--primary btn--sm site-header__panel" href={urlPainel}>
+                  <LayoutDashboard size={15} aria-hidden="true" />
+                  Meu painel
+                </a>
+              )}
+              <Link className="site-header__account" to="/conta">
+                <span className="site-header__avatar" aria-hidden="true">
+                  {initialsOf(session.user.displayName)}
+                </span>
+                <span className="site-header__account-name">Minha conta</span>
+              </Link>
+            </>
           ) : (
-            <Link className="btn btn--secondary btn--sm site-header__signin" to="/conta">
-              <LogIn size={15} aria-hidden="true" />
-              Entrar
-            </Link>
+            <>
+              <Link className="btn btn--ghost btn--sm site-header__signup" to="/cadastro">
+                <UserPlus size={15} aria-hidden="true" />
+                Criar conta
+              </Link>
+              <Link className="btn btn--secondary btn--sm site-header__signin" to="/conta">
+                <LogIn size={15} aria-hidden="true" />
+                Entrar
+              </Link>
+            </>
           )}
 
           <button
@@ -149,10 +166,22 @@ export function PublicHeader({ hasResults = false }: { hasResults?: boolean }) {
                 {link.rotulo}
               </NavLink>
             ))}
+            {urlPainel && (
+              <a href={urlPainel} className="mobile-menu__link">
+                <LayoutDashboard size={16} aria-hidden="true" />
+                Meu painel
+              </a>
+            )}
             <NavLink to="/conta" className="mobile-menu__link">
               <User size={16} aria-hidden="true" />
               {autenticado ? 'Minha conta' : 'Entrar'}
             </NavLink>
+            {!autenticado && (
+              <NavLink to="/cadastro" className="mobile-menu__link">
+                <UserPlus size={16} aria-hidden="true" />
+                Criar conta
+              </NavLink>
+            )}
           </nav>
         </div>
       )}

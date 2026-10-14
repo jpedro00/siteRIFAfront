@@ -5,7 +5,8 @@ import { ApiClientError, RESERVED_COMMUNITY_SLUGS, type MembershipSummary } from
 import { api } from '../api.ts';
 import { Loading, mensagemPara } from '../components/States.tsx';
 import { useDocumentMeta } from '../hooks/useDocumentMeta.ts';
-import { ORGANIZER_URL, PLATFORM_NAME } from '../lib/mode.ts';
+import { PLATFORM_NAME } from '../lib/mode.ts';
+import { painelUrl } from '../lib/painel.ts';
 import { useStorefront } from '../state/SessionProvider.tsx';
 
 /**
@@ -33,10 +34,6 @@ function slugProblem(slug: string): string | null {
   if (!/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(slug)) return 'Use letras minúsculas, números e hífen (sem hífen no começo ou no fim).';
   if ((RESERVED_COMMUNITY_SLUGS as readonly string[]).includes(slug)) return 'Este endereço é reservado. Escolha outro.';
   return null;
-}
-
-function painelUrl(slug: string): string | null {
-  return ORGANIZER_URL ? `${ORGANIZER_URL}/?comunidade=${encodeURIComponent(slug)}` : null;
 }
 
 function Passos() {
