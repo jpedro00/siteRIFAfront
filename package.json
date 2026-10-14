@@ -24,7 +24,8 @@
     "contracts:verify": "node scripts/contracts-snapshot.mjs",
     "dev:storefront": "npm run prepare:internal && npm run dev -w @clubedarifa/storefront",
     "dev:organizer": "npm run prepare:internal && npm run dev -w @clubedarifa/organizer",
-    "dev:admin": "npm run prepare:internal && npm run dev -w @clubedarifa/admin"
+    "dev:admin": "npm run prepare:internal && npm run dev -w @clubedarifa/admin",
+    "build:site": "node scripts/build-site.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

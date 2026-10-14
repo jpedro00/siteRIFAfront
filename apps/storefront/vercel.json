@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
   "installCommand": "npm ci --prefix ../..",
-  "buildCommand": "npm run contracts:verify --prefix ../.. && npm run build -w @clubedarifa/shared --prefix ../.. && npm run build -w @clubedarifa/storefront --prefix ../..",
+  "buildCommand": "npm run contracts:verify --prefix ../.. && npm run build -w @clubedarifa/shared --prefix ../.. && npm run build:site --prefix ../..",
   "outputDirectory": "dist",
   "github": {
     "silent": true
@@ -30,6 +30,22 @@
     {
       "source": "/api/:path*",
       "destination": "https://clubedarifa-api.onrender.com/api/:path*"
+    },
+    {
+      "source": "/painel",
+      "destination": "/painel/index.html"
+    },
+    {
+      "source": "/painel/:path*",
+      "destination": "/painel/index.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/admin/:path*",
+      "destination": "/admin/index.html"
     },
     {
       "source": "/(.*)",

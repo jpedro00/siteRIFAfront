@@ -11,7 +11,7 @@ if (!container) {
 
 createRoot(container).render(
   <StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL === '/' ? '' : import.meta.env.BASE_URL.slice(0, -1)}>
       <App />
     </BrowserRouter>
   </StrictMode>,
