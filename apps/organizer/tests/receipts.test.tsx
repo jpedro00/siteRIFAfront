@@ -22,6 +22,7 @@ vi.mock('../src/state/SessionProvider.tsx', () => ({
 }));
 
 import { ReceiptsPage } from '../src/pages/ReceiptsPage.tsx';
+import { providerPhrases } from '../src/components/PaymentMethodsPanel.tsx';
 
 /**
  * "Recebimentos": a conexao do Mercado Pago por OAuth. A tela nunca pede credencial; o que
@@ -456,13 +457,28 @@ describe('Recebimentos · provedores ligados', () => {
 });
 
 describe('Recebimentos · nome do provedor nos meios de pagamento', () => {
-  it('provedor STRIPE: os textos dizem Stripe, nao Mercado Pago', async () => {
+  it('provedor STRIPE: os textos dizem "a Stripe" (artigo feminino), nao Mercado Pago', async () => {
     METODOS.current = () => metodos({ provider: 'STRIPE', status: 'UNAVAILABLE', methods: [] });
     contas(resposta([conta()]));
     abrir();
-    expect(await screen.findByText('O Stripe não respondeu agora. Tente atualizar em instantes.')).toBeInTheDocument();
+    expect(await screen.findByText('A Stripe não respondeu agora. Tente atualizar em instantes.')).toBeInTheDocument();
     const painel = screen.getByRole('heading', { name: 'Meios de pagamento' }).closest('section')!;
-    expect(painel).toHaveTextContent('ambiente seguro do Stripe');
+    expect(painel).toHaveTextContent('ambiente seguro da Stripe');
+    expect(painel).not.toHaveTextContent(/(?:^|[^A-Za-z])(?:[oO]|do|no) Stripe/);
     expect(painel).not.toHaveTextContent('Mercado Pago');
+  });
+
+  it('provedor STRIPE sem o meio na conta: "na Stripe"', async () => {
+    METODOS.current = () =>
+      metodos({ provider: 'STRIPE', methods: [{ kind: 'PIX', providerReported: false, enabled: false, reason: 'NOT_REPORTED_BY_PROVIDER' }] });
+    contas(resposta([conta()]));
+    abrir();
+    expect(await screen.findByText('A conta conectada não oferece este meio na Stripe.')).toBeInTheDocument();
+  });
+
+  it('artigo concorda com o provedor: a Stripe, o Mercado Pago, o provedor (neutro)', () => {
+    expect(providerPhrases('STRIPE').o).toBe('a Stripe');
+    expect(providerPhrases('MERCADO_PAGO').o).toBe('o Mercado Pago');
+    expect(providerPhrases(null).o).toBe('o provedor de pagamento');
   });
 });

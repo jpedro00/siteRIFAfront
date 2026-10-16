@@ -28,17 +28,40 @@ const NOME: Record<PaymentMethodKind, string> = {
   OTHER: 'Outros meios do provedor',
 };
 
-const PROVEDOR: Record<string, string> = { MERCADO_PAGO: 'Mercado Pago', STRIPE: 'Stripe' };
+/** Nome e genero do provedor: "o Mercado Pago", mas "a Stripe". */
+const PROVEDOR: Record<string, { nome: string; feminino: boolean }> = {
+  MERCADO_PAGO: { nome: 'Mercado Pago', feminino: false },
+  STRIPE: { nome: 'Stripe', feminino: true },
+};
+const NEUTRO = { nome: 'provedor de pagamento', feminino: false };
 
 /** Nome do provedor para os textos; sem provedor conhecido, um termo neutro. */
 export function providerName(provider: string | null | undefined): string {
-  return (provider && PROVEDOR[provider]) || 'provedor de pagamento';
+  return ((provider && PROVEDOR[provider]) || NEUTRO).nome;
 }
 
-function explicacao(m: PaymentMethodAvailability, provedor: string): string {
+/** O nome com o artigo (e as contracoes) que concordam com o provedor. */
+export interface ProviderPhrases {
+  /** "o Mercado Pago" / "a Stripe" */
+  readonly o: string;
+  /** "O Mercado Pago" / "A Stripe" (inicio de frase) */
+  readonly O: string;
+  /** "no Mercado Pago" / "na Stripe" */
+  readonly no: string;
+  /** "do Mercado Pago" / "da Stripe" */
+  readonly do: string;
+}
+
+export function providerPhrases(provider: string | null | undefined): ProviderPhrases {
+  const { nome, feminino } = (provider && PROVEDOR[provider]) || NEUTRO;
+  const a = feminino ? 'a' : 'o';
+  return { o: `${a} ${nome}`, O: `${a.toUpperCase()} ${nome}`, no: `n${a} ${nome}`, do: `d${a} ${nome}` };
+}
+
+function explicacao(m: PaymentMethodAvailability, provedor: ProviderPhrases): string {
   const porMotivo: Record<PaymentMethodReason, string> = {
     ENABLED: 'Ativo: os participantes pagam por este meio.',
-    NOT_REPORTED_BY_PROVIDER: `A conta conectada não oferece este meio no ${provedor}.`,
+    NOT_REPORTED_BY_PROVIDER: `A conta conectada não oferece este meio ${provedor.no}.`,
     NOT_SUPPORTED_YET: m.providerReported
       ? 'A sua conta oferece, mas a plataforma ainda não habilitou este meio.'
       : 'Ainda não habilitado pela plataforma.',
@@ -69,7 +92,7 @@ export function PaymentMethodsPanel() {
     }
   }
 
-  const provedor = providerName(r.data?.provider);
+  const provedor = providerPhrases(r.data?.provider);
 
   return (
     <section className="section" aria-labelledby="meios-titulo">
@@ -83,7 +106,7 @@ export function PaymentMethodsPanel() {
         </button>
       </div>
 
-      {r.status === 'loading' && <p className="muted" role="status">Consultando o {provedor}…</p>}
+      {r.status === 'loading' && <p className="muted" role="status">Consultando {provedor.o}…</p>}
       {r.status === 'error' && (
         <p className="alert alert--danger" role="alert">
           <span className="alert__body">Não foi possível carregar os meios de pagamento.</span>
@@ -92,7 +115,7 @@ export function PaymentMethodsPanel() {
 
       {r.status === 'ready' && r.data?.status === 'UNAVAILABLE' && (
         <p className="alert alert--warning" role="status">
-          <span className="alert__body">O {provedor} não respondeu agora. Tente atualizar em instantes.</span>
+          <span className="alert__body">{provedor.O} não respondeu agora. Tente atualizar em instantes.</span>
         </p>
       )}
 
@@ -134,7 +157,7 @@ export function PaymentMethodsPanel() {
       )}
       <p className="field__hint">
         Dados de cartão nunca passam pelo nosso servidor: quando o cartão for habilitado, a digitação será feita
-        direto no ambiente seguro do {provedor}. Todo pagamento só vale depois de confirmado na consulta ao
+        direto no ambiente seguro {provedor.do}. Todo pagamento só vale depois de confirmado na consulta ao
         provedor.
       </p>
     </section>
