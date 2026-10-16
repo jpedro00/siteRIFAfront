@@ -28,6 +28,7 @@ const plano = (extra: Partial<PlatformPlan> = {}): PlatformPlan => ({
   status: 'AVAILABLE',
   stripeProductId: 'prod_abc123',
   stripePriceId: 'price_abc123',
+  platformFeeBps: null,
   createdAt: '2026-09-01T12:00:00.000Z',
   updatedAt: '2026-09-01T12:00:00.000Z',
   ...extra,
@@ -94,9 +95,66 @@ describe('Console · Planos', () => {
       maxActiveDraws: 20,
       maxTeamMembers: null,
       features: [],
+      platformFeeBps: null,
     });
     expect(JSON.stringify(corpo)).not.toMatch(/stripe|prod_|price_/i);
     expect(await screen.findByText(/criado como rascunho e sincronizado com a Stripe/)).toBeInTheDocument();
+  });
+
+  it('taxa da plataforma: o campo existe, converte % em bps na criacao e a lista mostra o valor ou o padrao', async () => {
+    catalogo([plano({ platformFeeBps: 750 }), plano({ id: '55555555-5555-4555-8555-555555555555', code: 'outro', name: 'Outro' })], {
+      platformCreatePlan: plano({ code: 'pro-anual', status: 'DRAFT' }),
+    });
+    abrir();
+    expect(await screen.findByText('7,5%')).toBeInTheDocument();
+    expect(screen.getByText('Padrão da plataforma')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Novo plano/ }));
+    expect(screen.getByText('Vazio usa a taxa padrão da plataforma.')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Código'), { target: { value: 'pro-anual' } });
+    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Pro' } });
+    fireEvent.change(screen.getByLabelText('Preço (R$)'), { target: { value: '10' } });
+    fireEvent.change(screen.getByLabelText('Taxa da plataforma (%)'), { target: { value: '12,34' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Criar plano' }));
+    await waitFor(() => expect(h.call).toHaveBeenCalledWith('platformCreatePlan', expect.anything()));
+    expect(h.call.mock.calls.find((c) => c[0] === 'platformCreatePlan')![1]).toMatchObject({ platformFeeBps: 1234 });
+  });
+
+  it('taxa invalida na criacao: erro no campo e nada e enviado', async () => {
+    catalogo([]);
+    abrir();
+    fireEvent.click(await screen.findByRole('button', { name: /Novo plano/ }));
+    fireEvent.change(screen.getByLabelText('Código'), { target: { value: 'pro-anual' } });
+    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Pro' } });
+    fireEvent.change(screen.getByLabelText('Preço (R$)'), { target: { value: '10' } });
+    fireEvent.change(screen.getByLabelText('Taxa da plataforma (%)'), { target: { value: '100,01' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Criar plano' }));
+    expect(await screen.findByText(/porcentagem de 0 a 100/)).toBeInTheDocument();
+    expect(h.call.mock.calls.some((c) => c[0] === 'platformCreatePlan')).toBe(false);
+  });
+
+  it('editar: carrega a taxa atual, envia bps e, vazio, envia null (volta ao padrao)', async () => {
+    catalogo([plano({ platformFeeBps: 750 })], { platformUpdatePlan: plano() });
+    abrir();
+    fireEvent.click(await screen.findByRole('button', { name: 'Editar o plano basico-mensal' }));
+    const campo = screen.getByLabelText('Taxa da plataforma (%)') as HTMLInputElement;
+    expect(campo.value).toBe('7,5');
+    fireEvent.change(campo, { target: { value: '3' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+    await waitFor(() =>
+      expect(h.call).toHaveBeenCalledWith(
+        'platformUpdatePlan',
+        { name: 'Básico', description: 'Plano de entrada', platformFeeBps: 300 },
+        { params: { id: '44444444-4444-4444-8444-444444444444' } },
+      ),
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Editar o plano basico-mensal' }));
+    fireEvent.change(screen.getByLabelText('Taxa da plataforma (%)'), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+    await waitFor(() =>
+      expect(h.call.mock.calls.filter((c) => c[0] === 'platformUpdatePlan')[1]![1]).toMatchObject({ platformFeeBps: null }),
+    );
   });
 
   it('valida no formulario antes de chamar a API', async () => {
