@@ -28,10 +28,17 @@ const NOME: Record<PaymentMethodKind, string> = {
   OTHER: 'Outros meios do provedor',
 };
 
-function explicacao(m: PaymentMethodAvailability): string {
+const PROVEDOR: Record<string, string> = { MERCADO_PAGO: 'Mercado Pago', STRIPE: 'Stripe' };
+
+/** Nome do provedor para os textos; sem provedor conhecido, um termo neutro. */
+export function providerName(provider: string | null | undefined): string {
+  return (provider && PROVEDOR[provider]) || 'provedor de pagamento';
+}
+
+function explicacao(m: PaymentMethodAvailability, provedor: string): string {
   const porMotivo: Record<PaymentMethodReason, string> = {
     ENABLED: 'Ativo: os participantes pagam por este meio.',
-    NOT_REPORTED_BY_PROVIDER: 'A conta conectada não oferece este meio no Mercado Pago.',
+    NOT_REPORTED_BY_PROVIDER: `A conta conectada não oferece este meio no ${provedor}.`,
     NOT_SUPPORTED_YET: m.providerReported
       ? 'A sua conta oferece, mas a plataforma ainda não habilitou este meio.'
       : 'Ainda não habilitado pela plataforma.',
@@ -62,6 +69,8 @@ export function PaymentMethodsPanel() {
     }
   }
 
+  const provedor = providerName(r.data?.provider);
+
   return (
     <section className="section" aria-labelledby="meios-titulo">
       <div className="section__head">
@@ -74,7 +83,7 @@ export function PaymentMethodsPanel() {
         </button>
       </div>
 
-      {r.status === 'loading' && <p className="muted" role="status">Consultando o Mercado Pago…</p>}
+      {r.status === 'loading' && <p className="muted" role="status">Consultando o {provedor}…</p>}
       {r.status === 'error' && (
         <p className="alert alert--danger" role="alert">
           <span className="alert__body">Não foi possível carregar os meios de pagamento.</span>
@@ -83,7 +92,7 @@ export function PaymentMethodsPanel() {
 
       {r.status === 'ready' && r.data?.status === 'UNAVAILABLE' && (
         <p className="alert alert--warning" role="status">
-          <span className="alert__body">O Mercado Pago não respondeu agora. Tente atualizar em instantes.</span>
+          <span className="alert__body">O {provedor} não respondeu agora. Tente atualizar em instantes.</span>
         </p>
       )}
 
@@ -101,7 +110,7 @@ export function PaymentMethodsPanel() {
                     {m.enabled ? 'Ativo' : 'Desligado'}
                   </span>
                 </p>
-                <p className="muted">{explicacao(m)}</p>
+                <p className="muted">{explicacao(m, provedor)}</p>
                 {podeGerir && alternaveis.includes(m.kind) && m.providerReported && (
                   <button
                     type="button"
@@ -125,7 +134,7 @@ export function PaymentMethodsPanel() {
       )}
       <p className="field__hint">
         Dados de cartão nunca passam pelo nosso servidor: quando o cartão for habilitado, a digitação será feita
-        direto no ambiente seguro do Mercado Pago. Todo pagamento só vale depois de confirmado na consulta ao
+        direto no ambiente seguro do {provedor}. Todo pagamento só vale depois de confirmado na consulta ao
         provedor.
       </p>
     </section>

@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
 import { ApiClientError, type PaymentAccount } from '@clubedarifa/shared';
 import { api } from '../api.ts';
 import { redirectTo } from '../lib/navigate.ts';
@@ -10,84 +9,68 @@ import { Notice, ToneBadge } from './BillingUi.tsx';
  *
  * O cadastro e a verificacao acontecem na pagina da Stripe; aqui so mostramos o estado e
  * levamos a pessoa para la. Nenhum dado bancario ou documento passa por esta tela. O dinheiro
- * cai na conta do criador e a plataforma retem a taxa do plano.
+ * cai direto na conta do criador e a plataforma retem a taxa do plano.
  *
  * Volta da Stripe: `?connect=return` (terminou ou saiu) e `?connect=refresh` (o link expirou).
- * Nos dois casos relemos o estado UMA vez, limpamos a URL e recarregamos a lista; no
+ * A pagina (ReceiptsPage) trata a volta: rele o estado UMA vez, limpa a URL e recarrega; no
  * `refresh` o botao "Continuar cadastro" gera um link novo.
  */
 
-const PENDENCIAS: Record<string, string> = {
-  'external_account': 'Conta bancária ou chave PIX para receber',
-  'business_profile.url': 'Site ou página do negócio',
-  'business_profile.mcc': 'Ramo de atividade',
-  'business_profile.product_description': 'Descrição do que você vende',
-  'tos_acceptance.date': 'Aceite dos termos da Stripe',
-  'tos_acceptance.ip': 'Aceite dos termos da Stripe',
-};
+/** Pendencias da Stripe em portugues, por prefixo. A ordem desta lista e a ordem de exibicao. */
+const REGRAS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/^individual\.(first_name|last_name)/, 'Nome completo'],
+  [/^individual\.dob/, 'Data de nascimento'],
+  [/^individual\.id_number/, 'CPF'],
+  [/^individual\.verification\.(document|additional_document)/, 'Documento de identidade'],
+  [/^individual\.address/, 'Endereço'],
+  [/^individual\.phone/, 'Telefone'],
+  [/^individual\.email/, 'E-mail'],
+  [/^individual\.political_exposure/, 'Declaração de exposição política'],
+  [/^business_profile/, 'Dados do negócio'],
+  [/^company\./, 'Dados da empresa'],
+  [/^representative\./, 'Dados do responsável'],
+  [/^external_account/, 'Conta bancária para receber os repasses'],
+  [/^tos_acceptance/, 'Aceite dos termos da Stripe'],
+];
+export const OUTRAS_PENDENCIAS = 'Outras informações pedidas pela Stripe';
 
-/** Texto simples para um codigo de pendencia da Stripe; o que nao conhecemos vira lista generica. */
-export function humanizeRequirement(code: string): string {
-  const conhecido = PENDENCIAS[code];
-  if (conhecido) return conhecido;
-  const partes = code
-    .split('.')
-    .filter((p) => !/^(individual|company|representative|person_\w+|verification)$/.test(p))
-    .join(' ')
-    .replace(/_/g, ' ')
-    .trim();
-  return partes ? `Informação pendente: ${partes}` : 'Informação pendente';
+/** Lista sem repeticao, em portugues, em ordem estavel. Nunca mostra um codigo cru da Stripe. */
+export function humanizeRequirements(codes: readonly string[]): string[] {
+  const achados = new Set<string>();
+  let outras = false;
+  for (const codigo of codes) {
+    const regra = REGRAS.find(([re]) => re.test(codigo));
+    if (regra) achados.add(regra[1]);
+    else outras = true;
+  }
+  const ordenados = REGRAS.map(([, texto]) => texto).filter((t, i, todos) => achados.has(t) && todos.indexOf(t) === i);
+  return outras ? [...ordenados, OUTRAS_PENDENCIAS] : ordenados;
 }
 
 export function ConnectCard({
   accounts,
-  enabled,
   canManage,
-  onChanged,
+  linkExpirou = false,
+  erro: erroExterno = null,
 }: {
   accounts: readonly PaymentAccount[];
-  enabled: boolean;
   canManage: boolean;
-  onChanged: () => void;
+  /** O link de cadastro expirou (volta com `?connect=refresh`). Vem da pagina para sobreviver ao recarregamento. */
+  linkExpirou?: boolean;
+  /** Falha ao reler o cadastro na volta da Stripe. */
+  erro?: string | null;
 }) {
-  const [params, setParams] = useSearchParams();
-  const lido = useRef(false);
   const [ocupado, setOcupado] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
-  const [linkExpirou, setLinkExpirou] = useState(false);
+  const [erroLocal, setErro] = useState<string | null>(null);
+  const erro = erroLocal ?? erroExterno;
 
-  useEffect(() => {
-    if (lido.current) return;
-    const retorno = params.get('connect');
-    if (retorno !== 'return' && retorno !== 'refresh') return;
-    lido.current = true;
-    if (retorno === 'refresh') setLinkExpirou(true);
-    const proximo = new URLSearchParams(params);
-    proximo.delete('connect');
-    setParams(proximo, { replace: true });
-    if (!canManage) {
-      onChanged();
-      return;
-    }
-    void (async () => {
-      try {
-        await api.call('refreshStripeAccount');
-      } catch (falha) {
-        setErro(falha instanceof ApiClientError ? falha.message : 'Não foi possível atualizar o seu cadastro agora. Tente novamente.');
-      }
-      onChanged();
-    })();
-    // Roda so na chegada; a trava e o `lido`.
-  }, []);
-
-  if (!enabled) return null;
-
+  // Conta encerrada (desconectada/revogada) nao conta como cadastro em andamento.
   const stripe = accounts
-    .filter((c) => c.provider === 'STRIPE')
-    .sort((a, b) => b.connectedAt.localeCompare(a.connectedAt));
+    .filter((c) => c.provider === 'STRIPE' && c.status !== 'DISCONNECTED' && c.status !== 'REVOKED')
+    .sort((a, b) => Number(b.status === 'CONNECTED') - Number(a.status === 'CONNECTED') || b.connectedAt.localeCompare(a.connectedAt));
   const conta = stripe.find((c) => c.canReceivePayments) ?? stripe[0] ?? null;
   const ativa = conta?.canReceivePayments === true;
-  const pendencias = conta?.requirementsDue ?? [];
+  const pendencias = humanizeRequirements(conta?.requirementsDue ?? []);
 
   const iniciar = async () => {
     setOcupado(true);
@@ -137,8 +120,8 @@ export function ConnectCard({
               <div>
                 <p className="muted">O que ainda falta:</p>
                 <ul className="plain-list">
-                  {pendencias.map((codigo) => (
-                    <li key={codigo}>{humanizeRequirement(codigo)}</li>
+                  {pendencias.map((texto) => (
+                    <li key={texto}>{texto}</li>
                   ))}
                 </ul>
               </div>
@@ -147,7 +130,7 @@ export function ConnectCard({
         ) : (
           <p>
             Cadastre onde você quer receber. O cadastro é feito na página segura da Stripe; não pedimos senha nem dados bancários aqui. O dinheiro das
-            rifas cai na conta do criador e a plataforma retém a taxa do plano.
+            rifas cai direto na sua conta e a plataforma retém a taxa do plano.
           </p>
         )}
 

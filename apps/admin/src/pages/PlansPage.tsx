@@ -454,15 +454,22 @@ function EditPlanForm({ plano, onDone, onCancel }: { plano: PlatformPlan; onDone
     setErroApi(null);
     if (Object.keys(e).length > 0 || !fee.ok) return;
 
-    const body: UpdatePlanRequest = {
-      name: name.trim(),
-      description: description.trim() === '' ? null : description.trim(),
-      platformFeeBps: fee.bps,
-    };
+    // So o que mudou: um PATCH com campo igual ao atual e ruido (e a taxa so vale para o futuro).
+    const body: UpdatePlanRequest = {};
+    const novoNome = name.trim();
+    const novaDescricao = description.trim() === '' ? null : description.trim();
+    if (novoNome !== plano.name) body.name = novoNome;
+    if (novaDescricao !== (plano.description ?? null)) body.description = novaDescricao;
+    const taxaMudou = fee.bps !== (plano.platformFeeBps ?? null);
+    if (taxaMudou) body.platformFeeBps = fee.bps;
+    if (Object.keys(body).length === 0) {
+      onDone(`Plano ${plano.code}: nada para salvar, nenhum campo foi alterado.`);
+      return;
+    }
     setEnviando(true);
     try {
       await api.call('platformUpdatePlan', body, { params: { id: plano.id } });
-      onDone(`Plano ${plano.code} atualizado. A nova taxa vale só para cobranças futuras.`);
+      onDone(`Plano ${plano.code} atualizado.${taxaMudou ? ' A nova taxa vale só para cobranças futuras.' : ''}`);
     } catch (falha) {
       setErroApi(falha instanceof ApiClientError ? falha.message : 'Não foi possível salvar o plano.');
     } finally {

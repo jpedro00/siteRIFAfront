@@ -144,7 +144,7 @@ describe('Console · Planos', () => {
     await waitFor(() =>
       expect(h.call).toHaveBeenCalledWith(
         'platformUpdatePlan',
-        { name: 'Básico', description: 'Plano de entrada', platformFeeBps: 300 },
+        { platformFeeBps: 300 },
         { params: { id: '44444444-4444-4444-8444-444444444444' } },
       ),
     );
@@ -261,5 +261,37 @@ describe('Console · Planos', () => {
     h.call.mockRejectedValue(new ApiClientError({ code: 'INTERNAL', message: 'Erro interno. Tente novamente em instantes.', status: 500 }));
     abrir();
     expect(await screen.findByRole('alert')).toBeInTheDocument();
+  });
+});
+
+describe('Console · Planos · editar so o que mudou', () => {
+  it('nada alterado: nao chama a API', async () => {
+    catalogo([plano({ platformFeeBps: 750 })]);
+    abrir();
+    fireEvent.click(await screen.findByRole('button', { name: 'Editar o plano basico-mensal' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+    expect(await screen.findByText(/nenhum campo foi alterado/)).toBeInTheDocument();
+    expect(h.call.mock.calls.some((c) => c[0] === 'platformUpdatePlan')).toBe(false);
+  });
+
+  it('so o nome mudou: envia so o nome e nao fala da taxa', async () => {
+    catalogo([plano({ platformFeeBps: 750 })], { platformUpdatePlan: plano() });
+    abrir();
+    fireEvent.click(await screen.findByRole('button', { name: 'Editar o plano basico-mensal' }));
+    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Básico 2' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+    await waitFor(() =>
+      expect(h.call).toHaveBeenCalledWith('platformUpdatePlan', { name: 'Básico 2' }, { params: { id: '44444444-4444-4444-8444-444444444444' } }),
+    );
+    expect(await screen.findByText('Plano basico-mensal atualizado.')).toBeInTheDocument();
+  });
+
+  it('a taxa mudou: a mensagem avisa que vale so para cobrancas futuras', async () => {
+    catalogo([plano({ platformFeeBps: 750 })], { platformUpdatePlan: plano() });
+    abrir();
+    fireEvent.click(await screen.findByRole('button', { name: 'Editar o plano basico-mensal' }));
+    fireEvent.change(screen.getByLabelText('Taxa da plataforma (%)'), { target: { value: '8' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+    expect(await screen.findByText(/A nova taxa vale só para cobranças futuras/)).toBeInTheDocument();
   });
 });

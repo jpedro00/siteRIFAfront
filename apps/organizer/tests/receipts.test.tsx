@@ -47,6 +47,8 @@ const conta = (extra: Partial<PaymentAccount> = {}): PaymentAccount => ({
 
 const resposta = (accounts: PaymentAccount[], extra: Partial<PaymentAccountsResponse> = {}): PaymentAccountsResponse => ({
   enabled: true,
+  connectEnabled: false,
+  mercadoPagoEnabled: true,
   accounts,
   checkoutAvailable: accounts.some((a) => a.canReceivePayments),
   ...extra,
@@ -142,7 +144,7 @@ describe('Recebimentos · meios de pagamento (por capacidades)', () => {
   it('sem conta conectada o painel nem aparece (e nada e consultado)', async () => {
     contas(resposta([]));
     abrir();
-    await screen.findByText('Nenhuma conta conectada');
+    await screen.findByText('Nenhuma conta do Mercado Pago conectada');
     expect(screen.queryByRole('heading', { name: 'Meios de pagamento' })).toBeNull();
     expect(h.call).not.toHaveBeenCalledWith('tenantPaymentMethods', expect.anything(), expect.anything());
   });
@@ -152,7 +154,7 @@ describe('Recebimentos · estados da conta', () => {
   it('SEM conta: explica para que serve e oferece conectar, sem pedir nenhuma credencial', async () => {
     contas(resposta([]));
     abrir();
-    expect(await screen.findByText('Nenhuma conta conectada')).toBeInTheDocument();
+    expect(await screen.findByText('Nenhuma conta do Mercado Pago conectada')).toBeInTheDocument();
     expect(screen.getByText(/conta que receberá os pagamentos dos participantes/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Conectar Mercado Pago' })).toBeEnabled();
     // nada de campo para token, chave ou segredo
@@ -203,10 +205,10 @@ describe('Recebimentos · estados da conta', () => {
   });
 
   it('modulo desligado no ambiente: diz isso e nao mostra botao que nao funcionaria', async () => {
-    contas(resposta([], { enabled: false }));
+    contas(resposta([], { enabled: false, mercadoPagoEnabled: false, connectEnabled: false }));
     abrir();
     expect(await screen.findByText('Conexão ainda não habilitada')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Conectar/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Conectar|Cadastrar/ })).toBeNull();
   });
 
   it('quem so le nao conecta nem desconecta', async () => {
@@ -281,7 +283,7 @@ describe('Recebimentos · conexao OAuth', () => {
   it('sem retorno na URL, nada e anunciado', async () => {
     contas(resposta([]));
     abrir();
-    await screen.findByText('Nenhuma conta conectada');
+    await screen.findByText('Nenhuma conta do Mercado Pago conectada');
     expect(screen.queryByText('Conexão concluída')).toBeNull();
     expect(screen.queryByText('A conexão não foi concluída')).toBeNull();
   });
@@ -370,5 +372,97 @@ describe('Recebimentos · desconexao', () => {
     expect(h.redirectTo).not.toHaveBeenCalled();
     fireEvent.click(within(painel).getByRole('button', { name: 'Continuar no Mercado Pago' }));
     await waitFor(() => expect(h.redirectTo).toHaveBeenCalledWith('https://auth.mercadopago.test/authorization?state=novo'));
+  });
+});
+
+describe('Recebimentos · provedores ligados', () => {
+  const stripe = (extra: Partial<PaymentAccount> = {}) =>
+    conta({ id: '44444444-4444-4444-8444-444444444444', provider: 'STRIPE', providerAccountId: 'acct_1', canReceivePayments: false, ...extra });
+
+  it('so Mercado Pago ligado: sem cartao da Stripe', async () => {
+    contas(resposta([], { mercadoPagoEnabled: true, connectEnabled: false }));
+    abrir();
+    expect(await screen.findByRole('button', { name: 'Conectar Mercado Pago' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Conta Rifas (Stripe)' })).toBeNull();
+    expect(screen.queryByText('Conexão ainda não habilitada')).toBeNull();
+  });
+
+  it('so Connect ligado: cartao da Stripe e nenhum botao de conectar Mercado Pago', async () => {
+    contas(resposta([], { mercadoPagoEnabled: false, connectEnabled: true }));
+    abrir();
+    expect(await screen.findByRole('button', { name: 'Cadastrar recebimento' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Mercado Pago/ })).toBeNull();
+    expect(screen.queryByText('Nenhuma conta do Mercado Pago conectada')).toBeNull();
+    expect(screen.queryByText('Conexão ainda não habilitada')).toBeNull();
+  });
+
+  it('os dois ligados: os dois', async () => {
+    contas(resposta([], { mercadoPagoEnabled: true, connectEnabled: true }));
+    abrir();
+    expect(await screen.findByRole('button', { name: 'Cadastrar recebimento' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Conectar Mercado Pago' })).toBeInTheDocument();
+  });
+
+  it('conta Stripe nao vira "principal" do Mercado Pago', async () => {
+    contas(resposta([stripe()], { mercadoPagoEnabled: true, connectEnabled: true }));
+    abrir();
+    expect(await screen.findByText('Nenhuma conta do Mercado Pago conectada')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Continuar cadastro' })).toBeInTheDocument();
+  });
+
+  /** O recarregamento troca a tela por um esqueleto: o aviso precisa sobreviver a ele. */
+  function comRefresh(refresh: () => unknown) {
+    let listagens = 0;
+    h.call.mockImplementation(async (name: string) => {
+      if (name === 'tenantPaymentAccounts') {
+        listagens += 1;
+        return resposta([stripe()], { mercadoPagoEnabled: false, connectEnabled: true });
+      }
+      if (name === 'refreshStripeAccount') return refresh();
+      throw new Error(`inesperada: ${name}`);
+    });
+    return () => listagens;
+  }
+
+  it('?connect=refresh: atualiza uma vez, limpa a URL e o aviso de link expirado continua depois do recarregamento', async () => {
+    const listagens = comRefresh(() => resposta([stripe()]));
+    abrir('/recebimentos?connect=refresh&x=1');
+    expect(await screen.findByText('O link de cadastro expirou')).toBeInTheDocument();
+    await waitFor(() => expect(listagens()).toBeGreaterThanOrEqual(2));
+    expect(await screen.findByRole('button', { name: 'Continuar cadastro' })).toBeInTheDocument();
+    expect(screen.getByText('O link de cadastro expirou')).toBeInTheDocument();
+    expect(h.call.mock.calls.filter((c) => c[0] === 'refreshStripeAccount')).toHaveLength(1);
+    expect(screen.getByTestId('local').textContent).toBe('/recebimentos?x=1');
+  });
+
+  it('?connect=return com falha ao atualizar: o erro continua visivel depois do recarregamento', async () => {
+    const listagens = comRefresh(() => {
+      throw new ApiClientError({ code: 'MFA_REQUIRED', message: 'Confirme a verificação em duas etapas para continuar.', status: 403 });
+    });
+    abrir('/recebimentos?connect=return');
+    await waitFor(() => expect(listagens()).toBeGreaterThanOrEqual(2));
+    expect(await screen.findByText('Confirme a verificação em duas etapas para continuar.')).toBeInTheDocument();
+    expect(h.call.mock.calls.filter((c) => c[0] === 'refreshStripeAccount')).toHaveLength(1);
+    expect(screen.getByTestId('local').textContent).toBe('/recebimentos');
+  });
+
+  it('?connect=return sem permissao de gerir: nao chama a Stripe, so recarrega', async () => {
+    h.permissions = new Set(['payment_account:read']);
+    const listagens = comRefresh(() => resposta([]));
+    abrir('/recebimentos?connect=return');
+    await waitFor(() => expect(listagens()).toBeGreaterThanOrEqual(2));
+    expect(h.call.mock.calls.some((c) => c[0] === 'refreshStripeAccount')).toBe(false);
+  });
+});
+
+describe('Recebimentos · nome do provedor nos meios de pagamento', () => {
+  it('provedor STRIPE: os textos dizem Stripe, nao Mercado Pago', async () => {
+    METODOS.current = () => metodos({ provider: 'STRIPE', status: 'UNAVAILABLE', methods: [] });
+    contas(resposta([conta()]));
+    abrir();
+    expect(await screen.findByText('O Stripe não respondeu agora. Tente atualizar em instantes.')).toBeInTheDocument();
+    const painel = screen.getByRole('heading', { name: 'Meios de pagamento' }).closest('section')!;
+    expect(painel).toHaveTextContent('ambiente seguro do Stripe');
+    expect(painel).not.toHaveTextContent('Mercado Pago');
   });
 });
