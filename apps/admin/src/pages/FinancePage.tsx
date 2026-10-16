@@ -25,7 +25,13 @@ import type { Tone } from '../lib/billingAdmin.ts';
  * (aberta, em analise, resolvida manualmente). Devolucao e ajuste financeiro NAO sao feitos
  * aqui. Nenhum identificador completo de pagamento aparece — so uma referencia curta do pedido.
  */
-const TIPOS: Record<ReconciliationKind, { rotulo: string; tone: Tone; explicacao: string }> = {
+interface Tipo {
+  rotulo: string;
+  tone: Tone;
+  explicacao: string;
+}
+
+const TIPOS: Record<ReconciliationKind, Tipo> = {
   APPROVED_ORDER_NOT_PAID: {
     rotulo: 'Aprovado no provedor, pedido não pago',
     tone: 'danger',
@@ -51,7 +57,24 @@ const TIPOS: Record<ReconciliationKind, { rotulo: string; tone: Tone; explicacao
     tone: 'info',
     explicacao: 'A autorização da conta do organizador caiu com um pagamento pendente. Não é possível consultá-lo no provedor.',
   },
+  REFUND_FAILED: {
+    rotulo: 'Estorno falhou',
+    tone: 'danger',
+    explicacao:
+      'A Stripe informou que um estorno falhou depois de o pagamento constar como estornado: o comprador pode não ter recebido o dinheiro. Verifique o estorno no painel da Stripe e entre em contato com o comprador.',
+  },
 };
+
+/** Tipo que um backend mais novo pode mandar e este Console ainda nao conhece: nunca quebra a tela. */
+const TIPO_GENERICO: Tipo = {
+  rotulo: 'Divergência',
+  tone: 'neutral',
+  explicacao: 'Divergência de conciliação de um tipo que esta versão do Console ainda não descreve.',
+};
+
+function tipoDe(kind: string): Tipo {
+  return Object.prototype.hasOwnProperty.call(TIPOS, kind) ? TIPOS[kind as ReconciliationKind] : TIPO_GENERICO;
+}
 
 function ReviewCell({ issue, onSaved }: { issue: ReconciliationIssue; onSaved: () => void }) {
   const { can } = useSession();
@@ -175,8 +198,8 @@ export function FinancePage() {
           <ul className="chip-row" aria-label="Divergências por tipo">
             {data.byKind.map((k) => (
               <li key={k.kind}>
-                <ToneBadge tone={TIPOS[k.kind].tone}>
-                  {TIPOS[k.kind].rotulo}: {k.count}
+                <ToneBadge tone={tipoDe(k.kind).tone}>
+                  {tipoDe(k.kind).rotulo}: {k.count}
                 </ToneBadge>
               </li>
             ))}
@@ -201,8 +224,8 @@ export function FinancePage() {
                 {data.issues.map((i, n) => (
                   <tr key={`${i.id}-${n}`}>
                     <td>
-                      <ToneBadge tone={TIPOS[i.kind].tone}>{TIPOS[i.kind].rotulo}</ToneBadge>
-                      <p className="muted table__hint">{TIPOS[i.kind].explicacao}</p>
+                      <ToneBadge tone={tipoDe(i.kind).tone}>{tipoDe(i.kind).rotulo}</ToneBadge>
+                      <p className="muted table__hint">{tipoDe(i.kind).explicacao}</p>
                     </td>
                     <td>
                       {i.tenantName}
