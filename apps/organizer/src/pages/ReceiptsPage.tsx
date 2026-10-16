@@ -9,6 +9,7 @@ import {
 } from '@clubedarifa/shared';
 import { api } from '../api.ts';
 import { ConfirmPanel, Notice, ToneBadge } from '../components/BillingUi.tsx';
+import { ConnectCard } from '../components/ConnectCard.tsx';
 import { PaymentMethodsPanel } from '../components/PaymentMethodsPanel.tsx';
 import { EmptyState, ErrorPanel, MetricsSkeleton, PageHeader } from '../components/Ui.tsx';
 import { useApiResource } from '../hooks/useApiResource.ts';
@@ -119,7 +120,9 @@ export function ReceiptsPage() {
     );
   }
 
-  const { enabled, accounts } = contas.data;
+  const { enabled } = contas.data;
+  // A Stripe tem cartao proprio (ConnectCard); aqui ficam so as contas do Mercado Pago.
+  const accounts = contas.data.accounts.filter((c) => c.provider !== 'STRIPE');
   const ordenadas = [...accounts].sort((a, b) => b.connectedAt.localeCompare(a.connectedAt));
   const principal =
     ordenadas.find((c) => c.status === 'CONNECTED') ?? ordenadas.find((c) => c.status === 'DISCONNECTING') ?? ordenadas[0] ?? null;
@@ -159,6 +162,8 @@ export function ReceiptsPage() {
           </Notice>
         )}
       </div>
+
+      <ConnectCard accounts={contas.data.accounts} enabled={enabled} canManage={podeGerir} onChanged={contas.reload} />
 
       {!enabled && (
         <Notice tone="neutral" title="Conexão ainda não habilitada">

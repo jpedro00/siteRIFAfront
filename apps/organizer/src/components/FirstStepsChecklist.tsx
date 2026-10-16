@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import { Plus } from 'lucide-react';
-import type { TenantPermission } from '@clubedarifa/shared';
+import type { PaymentAccountsResponse, TenantPermission } from '@clubedarifa/shared';
+import { api } from '../api.ts';
+import { useApiResource } from '../hooks/useApiResource.ts';
 import { useSession } from '../state/SessionProvider.tsx';
 
 interface Passo {
@@ -20,7 +22,7 @@ interface Passo {
  */
 const PASSOS: readonly Passo[] = [
   { to: '/comunidade', titulo: 'Complete sua comunidade', texto: 'Nome público, logo, contato e descrição que aparecem na sua vitrine.', permission: 'tenant:read' },
-  { to: '/recebimentos', titulo: 'Configure seus recebimentos', texto: 'Conecte a sua conta para receber o pagamento das rifas.', permission: 'payment_account:read' },
+  { to: '/recebimentos', titulo: 'Configure seus recebimentos', texto: 'Cadastre ou conecte a sua conta para receber o pagamento das rifas.', permission: 'payment_account:read' },
   { to: '/assinatura', titulo: 'Confira sua assinatura', texto: 'Veja o plano da sua comunidade e o que ele inclui.', permission: 'billing:read' },
 ];
 
@@ -28,6 +30,14 @@ export function FirstStepsChecklist() {
   const { can } = useSession();
   const passos = PASSOS.filter((passo) => can(passo.permission));
   const podeCriar = can('draw:write');
+  // O passo de recebimentos vale para QUALQUER provedor (Mercado Pago ou Stripe). Se a consulta
+  // falhar ou a pessoa nao pode le-la, o passo simplesmente continua como pendente.
+  const podeVerContas = can('payment_account:read');
+  const contas = useApiResource<PaymentAccountsResponse | null>(
+    (signal) => (podeVerContas ? api.call('tenantPaymentAccounts', undefined, { signal }) : Promise.resolve(null)),
+    [podeVerContas],
+  );
+  const recebimentoPronto = contas.data?.accounts.some((c) => c.canReceivePayments) ?? false;
 
   return (
     <div className="stack" data-testid="primeiros-passos">
@@ -41,9 +51,12 @@ export function FirstStepsChecklist() {
             <span>
               <strong>
                 {indice + 1}. {passo.titulo}
+                {passo.to === '/recebimentos' && recebimentoPronto ? ' (concluído)' : ''}
               </strong>
               <br />
-              <span className="muted">{passo.texto}</span>
+              <span className="muted">
+                {passo.to === '/recebimentos' && recebimentoPronto ? 'Você já pode receber o pagamento das rifas.' : passo.texto}
+              </span>
             </span>
             <Link className="btn btn--secondary btn--sm" to={passo.to}>
               Abrir

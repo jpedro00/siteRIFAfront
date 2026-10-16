@@ -1,8 +1,10 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const h = vi.hoisted(() => ({ permissions: new Set<string>() }));
+const h = vi.hoisted(() => ({ permissions: new Set<string>(), call: vi.fn() }));
+
+vi.mock('../src/api.ts', () => ({ api: { call: h.call } }));
 
 vi.mock('../src/state/SessionProvider.tsx', () => ({
   useSession: () => ({ can: (p: string) => h.permissions.has(p) }),
@@ -12,7 +14,11 @@ import { FirstStepsChecklist } from '../src/components/FirstStepsChecklist.tsx';
 
 /** Primeiros passos do criador novo: so leva a telas que existem e respeita permissao. */
 
-beforeEach(() => h.permissions.clear());
+beforeEach(() => {
+  h.permissions.clear();
+  h.call.mockReset();
+  h.call.mockResolvedValue({ enabled: true, accounts: [], checkoutAvailable: false });
+});
 afterEach(() => vi.unstubAllEnvs());
 
 function montar() {
@@ -41,6 +47,33 @@ describe('checklist de primeiros passos', () => {
     expect(screen.queryByText(/Configure seus recebimentos/)).toBeNull();
     expect(screen.queryByText(/Confira sua assinatura/)).toBeNull();
     expect(screen.queryByRole('link', { name: /Criar minha primeira rifa/ })).toBeNull();
+  });
+});
+
+describe('checklist · passo de recebimentos', () => {
+  const conta = (provider: string, canReceivePayments: boolean) => ({ id: provider, provider, canReceivePayments });
+
+  it('conta Stripe pronta conclui o passo (nao so Mercado Pago)', async () => {
+    h.permissions.add('payment_account:read');
+    h.call.mockResolvedValue({ enabled: true, accounts: [conta('STRIPE', true)], checkoutAvailable: true });
+    montar();
+    expect(await screen.findByText(/Configure seus recebimentos \(concluído\)/)).toBeInTheDocument();
+  });
+
+  it('conta Mercado Pago pronta tambem conclui', async () => {
+    h.permissions.add('payment_account:read');
+    h.call.mockResolvedValue({ enabled: true, accounts: [conta('MERCADO_PAGO', true)], checkoutAvailable: true });
+    montar();
+    expect(await screen.findByText(/\(concluído\)/)).toBeInTheDocument();
+  });
+
+  it('sem conta pronta o passo segue pendente', async () => {
+    h.permissions.add('payment_account:read');
+    h.call.mockResolvedValue({ enabled: true, accounts: [conta('STRIPE', false)], checkoutAvailable: false });
+    montar();
+    await waitFor(() => expect(h.call).toHaveBeenCalledWith('tenantPaymentAccounts', undefined, expect.anything()));
+    expect(screen.getByText(/Configure seus recebimentos/)).toBeInTheDocument();
+    expect(screen.queryByText(/concluído/)).toBeNull();
   });
 });
 
