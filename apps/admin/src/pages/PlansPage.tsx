@@ -7,6 +7,7 @@ import {
   type PlanInterval,
   type PlanStatus,
   type PlatformPlan,
+  type UpdatePlanRequest,
 } from '@clubedarifa/shared';
 import { api } from '../api.ts';
 import { ConfirmPanel, ToneBadge } from '../components/BillingUi.tsx';
@@ -20,6 +21,12 @@ import {
   parsePriceToCents,
   statusActions,
 } from '../lib/billingAdmin.ts';
+import {
+  PLATFORM_FEE_HINT,
+  describePlatformFee,
+  formatBpsAsPercent,
+  parsePercentToBps,
+} from '../lib/platformFee.ts';
 import { useSession } from '../state/SessionProvider.tsx';
 
 /**
@@ -40,6 +47,7 @@ export function PlansPage() {
   const podeGerir = can('platform:billing:manage');
   const planos = useApiResource((signal) => api.call('platformPlans', undefined, { signal }), []);
   const [criando, setCriando] = useState(false);
+  const [editando, setEditando] = useState<PlatformPlan | null>(null);
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -79,6 +87,7 @@ export function PlansPage() {
         maxActiveDraws: plano.maxActiveDraws,
         maxTeamMembers: plano.maxTeamMembers,
         features: plano.features,
+        ...(plano.platformFeeBps !== undefined ? { platformFeeBps: plano.platformFeeBps } : {}),
       });
       setAviso(`Plano ${plano.code} sincronizado com a Stripe.`);
       planos.reload();
@@ -102,7 +111,10 @@ export function PlansPage() {
             Atualizar
           </button>
           {podeGerir && (
-            <button type="button" className="btn btn--primary" aria-expanded={criando} onClick={() => setCriando((v) => !v)}>
+            <button type="button" className="btn btn--primary" aria-expanded={criando} onClick={() => {
+                setCriando((v) => !v);
+                setEditando(null);
+              }}>
               {criando ? <X size={16} aria-hidden="true" /> : <Plus size={16} aria-hidden="true" />}
               {criando ? 'Fechar' : 'Novo plano'}
             </button>
@@ -134,6 +146,20 @@ export function PlansPage() {
           onPartial={(mensagem) => {
             // O rascunho ficou gravado: a lista mostra "sincronizacao pendente".
             setErro(mensagem);
+            planos.reload();
+          }}
+        />
+      )}
+
+      {editando && podeGerir && (
+        <EditPlanForm
+          key={editando.id}
+          plano={editando}
+          onCancel={() => setEditando(null)}
+          onDone={(mensagem) => {
+            setEditando(null);
+            setAviso(mensagem);
+            setErro(null);
             planos.reload();
           }}
         />
@@ -178,6 +204,7 @@ export function PlansPage() {
                   <th scope="col">Situação</th>
                   <th scope="col">Preço</th>
                   <th scope="col">Limites</th>
+                  <th scope="col">Taxa da plataforma</th>
                   <th scope="col">Stripe</th>
                   <th scope="col">Criado em</th>
                   <th scope="col">
@@ -208,6 +235,7 @@ export function PlansPage() {
                         <p>Equipe: {limitLabel(p.maxTeamMembers)}</p>
                         {p.features.length > 0 && <p className="table__secondary">Recursos: {p.features.join(', ')}</p>}
                       </td>
+                      <td>{describePlatformFee(p.platformFeeBps)}</td>
                       <td>
                         <p className="table__secondary">Product: {p.stripeProductId ? <code className="slug">{p.stripeProductId}</code> : '—'}</p>
                         <p className="table__secondary">Price: {p.stripePriceId ? <code className="slug">{p.stripePriceId}</code> : '—'}</p>
@@ -218,6 +246,20 @@ export function PlansPage() {
                           <button type="button" className="btn btn--secondary btn--sm" disabled={ocupado !== null} onClick={() => void concluirSincronizacao(p)}>
                             {ocupado === p.id ? <span className="btn__spinner" aria-hidden="true" /> : null}
                             Concluir sincronização
+                          </button>
+                        )}
+                        {podeGerir && (
+                          <button
+                            type="button"
+                            className="btn btn--ghost btn--sm"
+                            disabled={ocupado !== null}
+                            aria-label={`Editar o plano ${p.code}`}
+                            onClick={() => {
+                              setCriando(false);
+                              setEditando(p);
+                            }}
+                          >
+                            Editar
                           </button>
                         )}
                         {acoes.map((a) => (
@@ -259,6 +301,7 @@ function CreatePlanForm({ onDone, onPartial }: { onDone: (mensagem: string) => v
   const [interval, setIntervalo] = useState<PlanInterval>('month');
   const [maxDraws, setMaxDraws] = useState('');
   const [maxTeam, setMaxTeam] = useState('');
+  const [taxa, setTaxa] = useState('');
   const [erros, setErros] = useState<Record<string, string>>({});
   const [erroApi, setErroApi] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
@@ -277,9 +320,11 @@ function CreatePlanForm({ onDone, onPartial }: { onDone: (mensagem: string) => v
     const team = maxTeam.trim() === '' ? null : Number(maxTeam);
     if (draws !== null && (!Number.isInteger(draws) || draws < 0)) e['maxDraws'] = 'Use um número inteiro (0 ou mais) ou deixe vazio para ilimitado.';
     if (team !== null && (!Number.isInteger(team) || team < 1)) e['maxTeam'] = 'Use um número inteiro (1 ou mais) ou deixe vazio para ilimitado.';
+    const fee = parsePercentToBps(taxa);
+    if (!fee.ok) e['fee'] = fee.error;
     setErros(e);
     setErroApi(null);
-    if (Object.keys(e).length > 0 || cents === null) return;
+    if (Object.keys(e).length > 0 || cents === null || !fee.ok) return;
 
     const body: CreatePlanRequest = {
       code,
@@ -291,6 +336,7 @@ function CreatePlanForm({ onDone, onPartial }: { onDone: (mensagem: string) => v
       maxActiveDraws: draws,
       maxTeamMembers: team,
       features: [],
+      platformFeeBps: fee.bps,
     };
 
     setEnviando(true);
@@ -360,11 +406,107 @@ function CreatePlanForm({ onDone, onPartial }: { onDone: (mensagem: string) => v
             <input id="plano-equipe" className="field__input" inputMode="numeric" value={maxTeam} onChange={(e) => setMaxTeam(e.target.value)} aria-invalid={erros['maxTeam'] ? true : undefined} />
           </Field>
         </div>
+        <FeeField value={taxa} onChange={setTaxa} error={erros['fee']} id="plano-taxa" />
         <p className="muted">Nenhuma funcionalidade comercial está definida ainda; por isso o plano nasce sem recursos extras.</p>
         <div className="row">
           <button type="submit" className="btn btn--primary" disabled={enviando}>
             {enviando ? <span className="btn__spinner" aria-hidden="true" /> : null}
             Criar plano
+          </button>
+        </div>
+      </form>
+    </section>
+  );
+}
+
+function FeeField({ id, value, onChange, error }: { id: string; value: string; onChange: (v: string) => void; error?: string | undefined }) {
+  return (
+    <Field id={id} label="Taxa da plataforma (%)" error={error} hint={PLATFORM_FEE_HINT}>
+      <input
+        id={id}
+        className="field__input"
+        inputMode="decimal"
+        placeholder="5"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-invalid={error ? true : undefined}
+      />
+    </Field>
+  );
+}
+
+/** Edita nome, descricao e taxa. Preco, periodicidade e moeda nao mudam (Price da Stripe e imutavel). */
+function EditPlanForm({ plano, onDone, onCancel }: { plano: PlatformPlan; onDone: (mensagem: string) => void; onCancel: () => void }) {
+  const [name, setName] = useState(plano.name);
+  const [description, setDescription] = useState(plano.description ?? '');
+  const [taxa, setTaxa] = useState(formatBpsAsPercent(plano.platformFeeBps));
+  const [erros, setErros] = useState<Record<string, string>>({});
+  const [erroApi, setErroApi] = useState<string | null>(null);
+  const [enviando, setEnviando] = useState(false);
+
+  async function enviar(event: FormEvent) {
+    event.preventDefault();
+    const e: Record<string, string> = {};
+    if (name.trim() === '') e['name'] = 'Informe o nome do plano.';
+    const fee = parsePercentToBps(taxa);
+    if (!fee.ok) e['fee'] = fee.error;
+    setErros(e);
+    setErroApi(null);
+    if (Object.keys(e).length > 0 || !fee.ok) return;
+
+    // So o que mudou: um PATCH com campo igual ao atual e ruido (e a taxa so vale para o futuro).
+    const body: UpdatePlanRequest = {};
+    const novoNome = name.trim();
+    const novaDescricao = description.trim() === '' ? null : description.trim();
+    if (novoNome !== plano.name) body.name = novoNome;
+    if (novaDescricao !== (plano.description ?? null)) body.description = novaDescricao;
+    const taxaMudou = fee.bps !== (plano.platformFeeBps ?? null);
+    if (taxaMudou) body.platformFeeBps = fee.bps;
+    if (Object.keys(body).length === 0) {
+      onDone(`Plano ${plano.code}: nada para salvar, nenhum campo foi alterado.`);
+      return;
+    }
+    setEnviando(true);
+    try {
+      await api.call('platformUpdatePlan', body, { params: { id: plano.id } });
+      onDone(`Plano ${plano.code} atualizado.${taxaMudou ? ' A nova taxa vale só para cobranças futuras.' : ''}`);
+    } catch (falha) {
+      setErroApi(falha instanceof ApiClientError ? falha.message : 'Não foi possível salvar o plano.');
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <section className="card" style={{ marginBottom: 24 }} aria-labelledby="editar-plano">
+      <div className="card__header">
+        <div>
+          <h2 className="card__title" id="editar-plano">
+            Editar plano {plano.code}
+          </h2>
+          <p className="card__subtitle">O preço e a periodicidade não mudam. A taxa nova vale só para cobranças futuras.</p>
+        </div>
+      </div>
+      <form className="card__body stack" noValidate onSubmit={(ev) => void enviar(ev)}>
+        {erroApi && (
+          <div className="alert alert--danger" role="alert">
+            <div className="alert__body">{erroApi}</div>
+          </div>
+        )}
+        <Field id="editar-nome" label="Nome" error={erros['name']}>
+          <input id="editar-nome" className="field__input" value={name} onChange={(ev) => setName(ev.target.value)} aria-invalid={erros['name'] ? true : undefined} />
+        </Field>
+        <Field id="editar-descricao" label="Descrição (opcional)">
+          <textarea id="editar-descricao" className="field__textarea" rows={2} value={description} onChange={(ev) => setDescription(ev.target.value)} />
+        </Field>
+        <FeeField id="editar-taxa" value={taxa} onChange={setTaxa} error={erros['fee']} />
+        <div className="row">
+          <button type="submit" className="btn btn--primary" disabled={enviando}>
+            {enviando ? <span className="btn__spinner" aria-hidden="true" /> : null}
+            Salvar alterações
+          </button>
+          <button type="button" className="btn btn--ghost" onClick={onCancel} disabled={enviando}>
+            Cancelar
           </button>
         </div>
       </form>

@@ -9,6 +9,7 @@ import {
 } from '@clubedarifa/shared';
 import { api } from '../api.ts';
 import { ConfirmPanel, Notice, ToneBadge } from '../components/BillingUi.tsx';
+import { ConnectCard } from '../components/ConnectCard.tsx';
 import { PaymentMethodsPanel } from '../components/PaymentMethodsPanel.tsx';
 import { EmptyState, ErrorPanel, MetricsSkeleton, PageHeader } from '../components/Ui.tsx';
 import { useApiResource } from '../hooks/useApiResource.ts';
@@ -58,6 +59,36 @@ export function ReceiptsPage() {
     setParams({}, { replace: true });
     if (lido.kind === 'ok') contas.reload();
     // Roda so na chegada: `params` muda logo depois de limpar a URL (a trava e o `retornoLido`).
+  }, []);
+
+  // Volta da Stripe (`?connect=return|refresh`): vive AQUI, e nao no cartao, porque recarregar a
+  // lista troca a tela por um esqueleto e desmontaria o cartao junto com o aviso.
+  const [stripeLinkExpirou, setStripeLinkExpirou] = useState(false);
+  const [stripeErro, setStripeErro] = useState<string | null>(null);
+  const stripeLido = useRef(false);
+
+  useEffect(() => {
+    if (stripeLido.current) return;
+    const retornoStripe = params.get('connect');
+    if (retornoStripe !== 'return' && retornoStripe !== 'refresh') return;
+    stripeLido.current = true;
+    if (retornoStripe === 'refresh') setStripeLinkExpirou(true);
+    const proximo = new URLSearchParams(params);
+    proximo.delete('connect');
+    setParams(proximo, { replace: true });
+    if (!podeGerir) {
+      contas.reload();
+      return;
+    }
+    void (async () => {
+      try {
+        await api.call('refreshStripeAccount');
+      } catch (falha) {
+        setStripeErro(falha instanceof ApiClientError ? falha.message : 'Não foi possível atualizar o seu cadastro agora. Tente novamente.');
+      }
+      contas.reload();
+    })();
+    // Roda so na chegada; a trava e o `stripeLido`.
   }, []);
 
   const [ocupado, setOcupado] = useState(false);
@@ -119,13 +150,15 @@ export function ReceiptsPage() {
     );
   }
 
-  const { enabled, accounts } = contas.data;
+  const { connectEnabled, mercadoPagoEnabled } = contas.data;
+  // A Stripe tem cartao proprio (ConnectCard); aqui ficam so as contas do Mercado Pago.
+  const accounts = contas.data.accounts.filter((c) => c.provider !== 'STRIPE');
   const ordenadas = [...accounts].sort((a, b) => b.connectedAt.localeCompare(a.connectedAt));
   const principal =
     ordenadas.find((c) => c.status === 'CONNECTED') ?? ordenadas.find((c) => c.status === 'DISCONNECTING') ?? ordenadas[0] ?? null;
   const anteriores = ordenadas.filter((c) => c !== principal);
 
-  const podeConectar = enabled && podeGerir && (principal === null || principal.status !== 'DISCONNECTING');
+  const podeConectar = mercadoPagoEnabled && podeGerir && (principal === null || principal.status !== 'DISCONNECTING');
   const conectando = principal?.status === 'CONNECTED';
 
   return (
@@ -160,16 +193,20 @@ export function ReceiptsPage() {
         )}
       </div>
 
-      {!enabled && (
+      {connectEnabled && (
+        <ConnectCard accounts={contas.data.accounts} canManage={podeGerir} linkExpirou={stripeLinkExpirou} erro={stripeErro} />
+      )}
+
+      {!mercadoPagoEnabled && !connectEnabled && (
         <Notice tone="neutral" title="Conexão ainda não habilitada">
           <p>O recebimento pelo Mercado Pago ainda não está habilitado neste ambiente. Assim que estiver, o botão de conexão aparece aqui.</p>
         </Notice>
       )}
 
       {principal === null ? (
-        <EmptyState
+        !mercadoPagoEnabled ? null : <EmptyState
           icon={<Landmark size={26} aria-hidden="true" />}
-          title="Nenhuma conta conectada"
+          title="Nenhuma conta do Mercado Pago conectada"
           text="Esta é a conta que receberá os pagamentos dos participantes. Sem ela, os participantes não conseguem pagar. Você será levado ao Mercado Pago para autorizar; não pedimos nenhuma senha ou chave."
           action={
             podeConectar ? (
@@ -222,7 +259,7 @@ export function ReceiptsPage() {
             <div className="row row--wrap">
               {principal.status === 'CONNECTED' && (
                 <>
-                  <button ref={trocarRef} type="button" className="btn btn--secondary" disabled={ocupado || !enabled} onClick={() => setConfirmacao({ tipo: 'trocar', conta: principal })}>
+                  <button ref={trocarRef} type="button" className="btn btn--secondary" disabled={ocupado || !mercadoPagoEnabled} onClick={() => setConfirmacao({ tipo: 'trocar', conta: principal })}>
                     Conectar outra conta
                   </button>
                   <button ref={desconectarRef} type="button" className="btn btn--danger-ghost" disabled={ocupado} onClick={() => setConfirmacao({ tipo: 'desconectar', conta: principal })}>

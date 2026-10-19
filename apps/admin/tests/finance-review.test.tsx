@@ -117,6 +117,40 @@ describe('Console · Financeiro (conciliacao)', () => {
     expect(screen.getByText('Aguardando o organizador.')).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-/);
   });
+
+  it('REFUND_FAILED (estorno da Stripe que falhou depois de estornado): rotulo e explicacao proprios', async () => {
+    const base = resumo().issues[0]!;
+    h.call.mockResolvedValue(
+      resumo({
+        openCount: 1,
+        byKind: [{ kind: 'REFUND_FAILED', count: 1 }],
+        issues: [{ ...base, kind: 'REFUND_FAILED', paymentStatus: 'ESTORNADO', needsManualRefund: true }],
+      }),
+    );
+    render(<FinancePage />);
+    const tabela = await screen.findByRole('table');
+    const [linha] = within(tabela).getAllByRole('row').slice(1);
+    expect(linha).toHaveTextContent('Estorno falhou');
+    expect(linha).toHaveTextContent('o comprador pode não ter recebido o dinheiro');
+    expect(screen.getByRole('list', { name: 'Divergências por tipo' })).toHaveTextContent('Estorno falhou: 1');
+  });
+
+  it('tipo desconhecido (backend mais novo): rotulo generico, sem quebrar a pagina', async () => {
+    const base = resumo().issues[0]!;
+    h.call.mockResolvedValue(
+      resumo({
+        openCount: 1,
+        byKind: [{ kind: 'TIPO_FUTURO' as never, count: 1 }],
+        issues: [{ ...base, kind: 'TIPO_FUTURO' as never }],
+      }),
+    );
+    render(<FinancePage />);
+    const tabela = await screen.findByRole('table');
+    const [linha] = within(tabela).getAllByRole('row').slice(1);
+    expect(linha).toHaveTextContent('Divergência');
+    expect(linha).toHaveTextContent('Clube A');
+    expect(screen.getByRole('list', { name: 'Divergências por tipo' })).toHaveTextContent('Divergência: 1');
+  });
 });
 
 // ---------------------------------------------------------------------------
